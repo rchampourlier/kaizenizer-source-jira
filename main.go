@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/Jeffail/tunny"
@@ -46,7 +47,7 @@ func main() {
 		db := openDB()
 		defer db.Close()
 		initDB(db) // reset of the DB before sync
-		sync(db)
+		performSync(db)
 	case "drop-db":
 		db := openDB()
 		defer db.Close()
@@ -60,15 +61,20 @@ func usage() {
 	log.Fatalln("Usage: go run main.go (init-db|drop-db|sync)")
 }
 
-func sync(db *sql.DB) {
+func performSync(db *sql.DB) {
 	c := getJiraClient()
 
 	// Using a chan of issue keys and a wait group
 	// for synchronization
 	issueKeys := make(chan string, 100)
 
+	// Using a WaitGroup to synchronize issue fetches and wait
+	// until all are done (even if all searches have been done)
+	var wg sync.WaitGroup
+
 	// Initialize a pool of workers to fetch issues
 	p := tunny.NewFunc(poolSize, func(key interface{}) interface{} {
+		defer wg.Done()
 		getIssue(c, db, key.(string))
 		return nil
 	})
@@ -76,11 +82,15 @@ func sync(db *sql.DB) {
 
 	go func() {
 		for issueKey := range issueKeys {
+			wg.Add(1)
 			go p.Process(issueKey)
 		}
 	}()
 
 	searchIssues(c, issueKeys)
+
+	// Wait until all fetches are done
+	wg.Wait()
 }
 
 func getJiraClient() *jira.Client {
