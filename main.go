@@ -1,17 +1,66 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 	"time"
 
 	"github.com/Jeffail/tunny"
 	"github.com/andygrunwald/go-jira"
+	_ "github.com/lib/pq"
 )
 
 const poolSize = 10
 
+// Main program
+//
+// ### init-db
+//
+// Initializes the connected database. Drops the existing tables if
+// exist and create new ones according to the necessary schema.
+//
+// ### sync
+//
+// Performs the synchronization. Current strategy is a full synchronization
+// by fetching all issues and inserting the appropriate rows in the
+// DB tables (`jira_issues_events` for now, see `db.go` for details).
+//
+// NB: The corresponding tables are dropped before performing the sync since
+// incremental sync is not supported.
+//
+// ### drop-db-tables
+//
+// Drops the tables used by this source (`jira_issues_events`).
+//
 func main() {
+	if len(os.Args) < 2 {
+		usage()
+	}
+	switch os.Args[1] {
+	case "init-db":
+		db := openDB()
+		defer db.Close()
+		initDB(db)
+	case "sync":
+		db := openDB()
+		defer db.Close()
+		initDB(db) // reset of the DB before sync
+		sync(db)
+	case "drop-db":
+		db := openDB()
+		defer db.Close()
+		dropDBTables(db)
+	default:
+		usage()
+	}
+}
+
+func usage() {
+	log.Fatalln("Usage: go run main.go (init-db|drop-db|sync)")
+}
+
+func sync(db *sql.DB) {
 	c := getJiraClient()
 
 	// Using a chan of issue keys and a wait group
@@ -20,7 +69,7 @@ func main() {
 
 	// Initialize a pool of workers to fetch issues
 	p := tunny.NewFunc(poolSize, func(key interface{}) interface{} {
-		getIssue(c, key.(string))
+		getIssue(c, db, key.(string))
 		return nil
 	})
 	defer p.Close()
@@ -70,7 +119,7 @@ func searchIssues(c *jira.Client, issueKeys chan string) {
 	}
 }
 
-func getIssue(client *jira.Client, issueKey string) {
+func getIssue(client *jira.Client, db *sql.DB, issueKey string) {
 	log.Printf("Fetching issue %s\n", issueKey)
 	i, _, err := client.Issue.Get(issueKey, &jira.GetQueryOptions{
 		Expand:       "names,schema,changelog",
@@ -79,34 +128,81 @@ func getIssue(client *jira.Client, issueKey string) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	var resolution string
-	if i.Fields.Resolution != nil {
-		resolution = i.Fields.Resolution.Name
+	for _, evt := range eventsFromIssue(i) {
+		insertEvent(db, evt)
 	}
+}
+
+type event struct {
+	time               time.Time
+	kind               string
+	issueKey           string
+	issueType          *string
+	issueProject       *string
+	issuePriority      *string
+	issueSummary       *string
+	issueReporter      *string
+	issueComponents    *string
+	commentName        *string
+	commentBody        *string
+	commentAuthor      *string
+	statusChangeAuthor *string
+	statusChangeFrom   *string
+	statusChangeTo     *string
+}
+
+func parseTime(s string) time.Time {
+	t, err := time.Parse("2006-01-02T15:04:05.000-0700", s)
+	if err != nil {
+		log.Fatalf("Failed to parse time `%s`", s)
+	}
+	return t
+}
+
+func eventsFromIssue(i *jira.Issue) []event {
+	events := make([]event, 0)
+
 	var components string
 	for _, c := range i.Fields.Components {
 		components = components + c.Name
 	}
-	pushIssueCreatedEvent(IssueCreatedEvent{
-		Time:       time.Time(i.Fields.Created),
-		Key:        i.Key,
-		Type:       i.Fields.Type.Name,
-		Project:    i.Fields.Project.Name,
-		Resolution: resolution,
-		Priority:   i.Fields.Priority.Name,
-		Summary:    i.Fields.Summary,
-		Reporter:   i.Fields.Reporter.Name,
-		Components: components,
+
+	events = append(events, event{
+		time:               time.Time(i.Fields.Created),
+		kind:               "created",
+		issueKey:           i.Key,
+		issueType:          &i.Fields.Type.Name,
+		issueProject:       &i.Fields.Project.Name,
+		issuePriority:      &i.Fields.Priority.Name,
+		issueSummary:       &i.Fields.Summary,
+		issueReporter:      reporterName(i),
+		issueComponents:    &components,
+		commentName:        nil,
+		commentBody:        nil,
+		commentAuthor:      nil,
+		statusChangeAuthor: nil,
+		statusChangeFrom:   nil,
+		statusChangeTo:     nil,
 	})
+
 	if i.Fields.Comments != nil {
 		for _, c := range i.Fields.Comments.Comments {
-			pushIssueCommentAddedEvent(IssueCommentAddedEvent{
-				Time:   c.Created,
-				Key:    i.Key,
-				Author: c.Author.Name,
-				Name:   c.Name,
-				Body:   c.Body,
+			events = append(events, event{
+				time:               parseTime(c.Created),
+				kind:               "status_changed",
+				issueKey:           i.Key,
+				issueType:          nil,
+				issueProject:       nil,
+				issuePriority:      nil,
+				issueSummary:       nil,
+				issueReporter:      nil,
+				issueComponents:    nil,
+				commentName:        &c.Name,
+				commentBody:        &c.Body,
+				commentAuthor:      &c.Author.Name,
+				statusChangeAuthor: nil,
+				statusChangeFrom:   nil,
+				statusChangeTo:     nil,
 			})
 		}
 	}
@@ -116,85 +212,34 @@ func getIssue(client *jira.Client, issueKey string) {
 				if cli.Field != "status" {
 					continue
 				}
-				pushIssueStatusChangedEvent(IssueStatusChangedEvent{
-					Time:   h.Created,
-					Key:    i.Key,
-					Author: h.Author.Name,
-					From:   cli.FromString,
-					To:     cli.ToString,
+				events = append(events, event{
+					time:               parseTime(h.Created),
+					kind:               "status_changed",
+					issueKey:           i.Key,
+					issueProject:       nil,
+					issuePriority:      nil,
+					issueSummary:       nil,
+					issueReporter:      nil,
+					issueComponents:    nil,
+					commentName:        nil,
+					commentBody:        nil,
+					commentAuthor:      nil,
+					statusChangeAuthor: &h.Author.Name,
+					statusChangeFrom:   &cli.FromString,
+					statusChangeTo:     &cli.ToString,
 				})
 			}
 		}
 	}
+
+	return events
 }
 
-// IssueCreatedEvent reflects the creation of a new
-// issue.
-type IssueCreatedEvent struct {
-	Time       time.Time
-	Key        string
-	Type       string
-	Project    string
-	Resolution string
-	Priority   string
-	Summary    string
-	Reporter   string
-	Components string
-}
-
-// IssueCommentAddedEvent reflects the addition of a comment
-// to the issue.
-type IssueCommentAddedEvent struct {
-	Time   string
-	Key    string
-	Author string
-	Name   string
-	Body   string
-}
-
-// IssueStatusChangedEvent reflects a change of status
-// in the issue.
-type IssueStatusChangedEvent struct {
-	Time   string
-	Key    string
-	Author string
-	From   string
-	To     string
-}
-
-func pushIssueCreatedEvent(e IssueCreatedEvent) {
-	log.Printf(
-		"IssueCreated %v - %s - type=%s project=%s resolution=%s priority=%s summary=%s reporter=%s components=%s\n",
-		e.Time,
-		e.Key,
-		e.Type,
-		e.Project,
-		e.Resolution,
-		e.Priority,
-		e.Summary,
-		e.Reporter,
-		e.Components,
-	)
-}
-
-func pushIssueCommentAddedEvent(e IssueCommentAddedEvent) {
-	log.Printf(
-		"IssueCommentAdded %v - %s - author=%s name=%s body=%s\n",
-		e.Time,
-		e.Key,
-		e.Author,
-		e.Name,
-		e.Body,
-	)
-}
-
-func pushIssueStatusChangedEvent(e IssueStatusChangedEvent) {
-	log.Printf(
-		"IssueStatusChanged %v - %s - author=%s from=%s to=%s\n",
-		e.Time,
-		e.Key,
-		e.Author,
-		e.From,
-		e.To,
-	)
+// Returns the issue's reporter name or nil if there is no
+// reporter.
+func reporterName(i *jira.Issue) *string {
+	if i.Fields.Reporter == nil {
+		return nil
+	}
+	return &i.Fields.Reporter.Name
 }
