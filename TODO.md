@@ -4,15 +4,28 @@
 
 ## Future improvements
 
+### Deployment
+
+- [ ] Deploy and schedule synchronization
+
+### Assignment data
+
+- [ ] Generate events for assignee change, with status information
+
 ### Optimization
 
 - [ ] Pool the DB connections (with 30 workers it fails, 10 is ok)
 - [ ] Synchronize transparently with a DB table switch
 - [ ] Handle incremental synchronization to enable the synchronization to be performed regularly (e.g. every 10 minutes).
 
+### Source code data
+
+- [ ] Extract Github pull requests from comments (see https://github.com/jobteaser/agilizer_source/blob/master/lib/agilizer/interface/jira/transformations/2_extract_github_pull_requests_from_comments.rb)
+- [ ] Add source code enrichments (see https://github.com/jobteaser/agilizer_source/blob/master/lib/agilizer/enrichments/source_code_changes.rb)
+
 ### Implement OAuth authentication
 
-Replace BasicAuth authentication with OAuth.
+- [ ] Replace BasicAuth authentication with OAuth.
 
 ## Done 
 
