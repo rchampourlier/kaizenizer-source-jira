@@ -8,11 +8,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func insertEvent(db *sql.DB, e event) {
+func insertIssueEvent(db *sql.DB, e issueEvent) {
 	query := `
 	INSERT INTO jira_issues_events (
-		time,
-		kind,
+		event_time,
+		event_kind,
 		issue_key,
 		issue_type,
 		issue_project,
@@ -32,8 +32,8 @@ func insertEvent(db *sql.DB, e event) {
 
 	rows, err := db.Query(
 		query,
-		e.time,
-		e.kind,
+		e.EventTime,
+		e.EventKind,
 		e.issueKey,
 		e.issueType,
 		e.issueProject,
@@ -54,6 +54,63 @@ func insertEvent(db *sql.DB, e event) {
 	rows.Close()
 }
 
+func insertIssueState(db *sql.DB, s issueState) {
+	query := `
+	INSERT INTO jira_issues_states (
+		created_at,
+		updated_at,
+		key,
+		project,
+		status,
+		resolved_at,
+		priority,
+		summary,
+		description,
+		type,
+		labels,
+		assignee,
+		developer_backend,
+		developer_frontend,
+		reviewer,
+		product_owner,
+		bug_cause,
+		epic,
+		tribe,
+		components,
+		fix_versions
+	)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21);
+	`
+	rows, err := db.Query(
+		query,
+		s.CreatedAt,
+		s.UpdatedAt,
+		s.Key,
+		s.Project,
+		s.Status,
+		s.ResolvedAt,
+		s.Priority,
+		s.Summary,
+		s.Description,
+		s.Type,
+		s.Labels,
+		s.Assignee,
+		s.DeveloperBackend,
+		s.DeveloperFrontend,
+		s.Reviewer,
+		s.ProductOwner,
+		s.BugCause,
+		s.Epic,
+		s.Tribe,
+		s.Components,
+		s.FixVersions,
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	rows.Close()
+}
+
 func openDB() *sql.DB {
 	connStr := os.Getenv("DB_URL")
 	db, err := sql.Open("postgres", connStr)
@@ -64,12 +121,22 @@ func openDB() *sql.DB {
 }
 
 func initDB(db *sql.DB) {
-	queries := []string{
+	queries := make([]string, 0)
+	queries = append(queries, queriesForJiraIssuesEvents()...)
+	queries = append(queries, queriesForJiraIssuesStates()...)
+	err := doQueries(db, queries)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+func queriesForJiraIssuesEvents() []string {
+	return []string{
 		`DROP TABLE IF EXISTS "jira_issues_events";`,
 		`CREATE TABLE "jira_issues_events" (
 		  "id" serial primary key not null,
-		  "time" timestamp NOT NULL,
-		  "kind" text NOT NULL,
+		  "event_time" timestamp NOT NULL,
+		  "event_kind" text NOT NULL,
 		  "issue_key" text NOT NULL,
 		  "issue_type" text,
 		  "issue_project" text,
@@ -86,9 +153,36 @@ func initDB(db *sql.DB) {
 		  "inserted_at" timestamp(6) NOT NULL DEFAULT statement_timestamp()
 		);`,
 	}
-	err := doQueries(db, queries)
-	if err != nil {
-		log.Fatalln(err)
+}
+
+func queriesForJiraIssuesStates() []string {
+	return []string{
+		`DROP TABLE IF EXISTS "jira_issues_states";`,
+		`CREATE TABLE "jira_issues_states" (
+			"id" SERIAL PRIMARY KEY NOT NULL,
+			"created_at" TIMESTAMP NOT NULL,
+			"updated_at" TIMESTAMP NOT NULL,
+			"key" TEXT NOT NULL,
+			"project" TEXT NOT NULL,
+			"status" TEXT NOT NULL,
+			"resolved_at" TIMESTAMP,
+			"priority" TEXT NOT NULL,
+			"summary" TEXT NOT NULL,
+			"description" TEXT,
+			"type" TEXT NOT NULL,
+			"labels" TEXT,
+			"assignee" TEXT,
+			"developer_backend" TEXT,
+			"developer_frontend" TEXT,
+			"reviewer" TEXT,
+			"product_owner" TEXT,
+			"bug_cause" TEXT,
+			"epic" TEXT,
+			"tribe" TEXT,
+			"components" TEXT,
+			"fix_versions" TEXT,
+			"inserted_at" TIMESTAMP(6) NOT NULL DEFAULT statement_timestamp()
+		);`,
 	}
 }
 
