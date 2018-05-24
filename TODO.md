@@ -2,6 +2,8 @@
 
 ## Ongoing
 
+---
+
 ## Future improvements
 
 ### Deployment
@@ -26,6 +28,8 @@
 ### Implement OAuth authentication
 
 - [ ] Replace BasicAuth authentication with OAuth.
+
+---
 
 ## Done 
 
