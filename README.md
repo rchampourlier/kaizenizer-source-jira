@@ -29,6 +29,13 @@ The tool will connect to Jira using the API and fetch all issues. For each issue
 
 The tool will perform a request to only retrieve the issues modified since the last synchronization, using the timestamp of the last event. All corresponding issues will be processed to generate new events as needed.
 
+### How to use
+
+```
+source .env
+go run *.go sync
+```
+
 ## Status
 
 The project is currently in early stage of development (POC phase). As such, it is not usable yet and the code quality standards (e.g. testing) will not be respected yet.

@@ -27,6 +27,11 @@ const poolSize = 10
 //
 // Drops the tables used by this source (`jira_issues_issueEvents`).
 //
+// ### explore-custom-fields <issue key>
+//
+// Displays custom field information for the issue specified by the
+// entered key.
+//
 func main() {
 	if len(os.Args) < 2 {
 		usage()

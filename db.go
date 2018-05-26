@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
@@ -49,7 +50,7 @@ func insertIssueEvent(db *sql.DB, e issueEvent) {
 		e.statusChangeTo,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln(fmt.Errorf("error in `insertIssueEvent`: %s", err))
 	}
 	rows.Close()
 }
@@ -106,7 +107,7 @@ func insertIssueState(db *sql.DB, s issueState) {
 		s.FixVersions,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln(fmt.Errorf("error in `insertIssueState`: %s", err))
 	}
 	rows.Close()
 }
@@ -115,7 +116,7 @@ func openDB() *sql.DB {
 	connStr := os.Getenv("DB_URL")
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln(fmt.Errorf("error in `openDB`: %s", err))
 	}
 	return db
 }
@@ -126,7 +127,7 @@ func initDB(db *sql.DB) {
 	queries = append(queries, queriesForJiraIssuesStates()...)
 	err := doQueries(db, queries)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln(fmt.Errorf("error in `initDB`: %s", err))
 	}
 }
 
@@ -192,7 +193,7 @@ func dropDBTables(db *sql.DB) {
 	}
 	err := doQueries(db, queries)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln(fmt.Errorf("error in `dropDBTables`: %s", err))
 	}
 }
 

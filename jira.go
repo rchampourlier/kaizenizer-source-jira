@@ -19,7 +19,7 @@ func newJiraClient() *jiraClient {
 	}
 	client, err := jira.NewClient(tp.Client(), "https://jobteaser.atlassian.net")
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln(fmt.Errorf("error in `newJiraClient`: %s", err))
 	}
 	return &jiraClient{client}
 }
@@ -32,7 +32,8 @@ func (c *jiraClient) searchIssues(issueKeys chan string) {
 	for {
 		pIssues, res, err := c.Issue.Search("order by created DESC", &jso)
 		if err != nil {
-			log.Fatalln(err)
+			// TODO: instead of crashing, should handle the error and retry
+			log.Fatalln(fmt.Errorf("error in `searchIssues`: %s", err))
 		}
 		log.Printf("Search: StartAt=%d Total=%d MaxResults=%d\n", res.StartAt, res.Total, res.MaxResults)
 		jso.MaxResults = res.MaxResults
@@ -55,7 +56,8 @@ func (c *jiraClient) getIssue(issueKey string) *jira.Issue {
 		FieldsByKeys: true,
 	})
 	if err != nil {
-		log.Fatalln(err)
+		// TODO: instead of crashing, should handle the error and retry
+		log.Fatalln(fmt.Errorf("error in `getIssue`: %s", err))
 	}
 	return i
 }

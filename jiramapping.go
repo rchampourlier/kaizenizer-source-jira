@@ -238,7 +238,7 @@ func valueFromCustomField(i *jira.Issue, field string) *string {
 func parseTime(s string) time.Time {
 	t, err := time.Parse("2006-01-02T15:04:05.000-0700", s)
 	if err != nil {
-		log.Fatalf("Failed to parse time `%s`", s)
+		log.Fatalf("failed to parse time `%s`", s)
 	}
 	return t
 }
