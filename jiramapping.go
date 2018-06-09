@@ -8,21 +8,13 @@ import (
 )
 
 type issueEvent struct {
-	EventTime          time.Time
-	EventKind          string
-	issueKey           string
-	issueType          *string
-	issueProject       *string
-	issuePriority      *string
-	issueSummary       *string
-	issueReporter      *string
-	issueComponents    *string
-	commentName        *string
-	commentBody        *string
-	commentAuthor      *string
-	statusChangeAuthor *string
-	statusChangeFrom   *string
-	statusChangeTo     *string
+	EventTime        time.Time
+	EventKind        string
+	EventAuthor      string
+	IssueKey         string
+	CommentBody      *string
+	StatusChangeFrom *string
+	StatusChangeTo   *string
 }
 
 type issueState struct {
@@ -54,41 +46,25 @@ func issueEventsFromIssue(i *jira.Issue) []issueEvent {
 	issueEvents := make([]issueEvent, 0)
 
 	issueEvents = append(issueEvents, issueEvent{
-		EventTime:          time.Time(i.Fields.Created),
-		EventKind:          "created",
-		issueKey:           i.Key,
-		issueType:          &i.Fields.Type.Name,
-		issueProject:       &i.Fields.Project.Name,
-		issuePriority:      &i.Fields.Priority.Name,
-		issueSummary:       &i.Fields.Summary,
-		issueReporter:      reporterName(i),
-		issueComponents:    components(i),
-		commentName:        nil,
-		commentBody:        nil,
-		commentAuthor:      nil,
-		statusChangeAuthor: nil,
-		statusChangeFrom:   nil,
-		statusChangeTo:     nil,
+		EventTime:        time.Time(i.Fields.Created),
+		EventKind:        "created",
+		EventAuthor:      i.Fields.Reporter.Name,
+		IssueKey:         i.Key,
+		CommentBody:      nil,
+		StatusChangeFrom: nil,
+		StatusChangeTo:   nil,
 	})
 
 	if i.Fields.Comments != nil {
 		for _, c := range i.Fields.Comments.Comments {
 			issueEvents = append(issueEvents, issueEvent{
-				EventTime:          parseTime(c.Created),
-				EventKind:          "comment_added",
-				issueKey:           i.Key,
-				issueType:          nil,
-				issueProject:       nil,
-				issuePriority:      nil,
-				issueSummary:       nil,
-				issueReporter:      nil,
-				issueComponents:    nil,
-				commentName:        &c.Name,
-				commentBody:        &c.Body,
-				commentAuthor:      &c.Author.Name,
-				statusChangeAuthor: nil,
-				statusChangeFrom:   nil,
-				statusChangeTo:     nil,
+				EventTime:        parseTime(c.Created),
+				EventKind:        "comment_added",
+				EventAuthor:      c.Author.Name,
+				IssueKey:         i.Key,
+				CommentBody:      &c.Body,
+				StatusChangeFrom: nil,
+				StatusChangeTo:   nil,
 			})
 		}
 	}
@@ -99,20 +75,13 @@ func issueEventsFromIssue(i *jira.Issue) []issueEvent {
 					continue
 				}
 				issueEvents = append(issueEvents, issueEvent{
-					EventTime:          parseTime(h.Created),
-					EventKind:          "status_changed",
-					issueKey:           i.Key,
-					issueProject:       nil,
-					issuePriority:      nil,
-					issueSummary:       nil,
-					issueReporter:      nil,
-					issueComponents:    nil,
-					commentName:        nil,
-					commentBody:        nil,
-					commentAuthor:      nil,
-					statusChangeAuthor: &h.Author.Name,
-					statusChangeFrom:   &cli.FromString,
-					statusChangeTo:     &cli.ToString,
+					EventTime:        parseTime(h.Created),
+					EventKind:        "status_changed",
+					EventAuthor:      h.Author.Name,
+					IssueKey:         i.Key,
+					CommentBody:      nil,
+					StatusChangeFrom: &cli.FromString,
+					StatusChangeTo:   &cli.ToString,
 				})
 			}
 		}
