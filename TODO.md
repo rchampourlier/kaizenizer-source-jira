@@ -2,9 +2,15 @@
 
 ## Ongoing
 
+### Data model
+
+- [ ] For `jira_issue_events` replace `..._author` columns by a single `event_author` one
+- [ ] Cleanup `jira_issue_events` table, remove columns that can be obtained by joining with `jira_issue_states`
+
 ---
 
 ## Future improvements
+
 
 ### Deployment
 
