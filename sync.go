@@ -48,3 +48,16 @@ func (c *jiraClient) performSync(db *sql.DB) {
 
 	log.Printf("Sync done in %f minutes\n", time.Since(beforeSync).Minutes())
 }
+
+func (c *jiraClient) performSyncForIssueKey(db *sql.DB, issueKey string) {
+	beforeSync := time.Now()
+	log.Printf("Sync starting\n")
+
+	i := c.getIssue(issueKey)
+	for _, ie := range issueEventsFromIssue(i) {
+		insertIssueEvent(db, ie)
+	}
+	insertIssueState(db, issueStateFromIssue(i))
+
+	log.Printf("Sync done in %f minutes\n", time.Since(beforeSync).Minutes())
+}

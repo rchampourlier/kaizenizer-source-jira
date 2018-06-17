@@ -48,7 +48,7 @@ func issueEventsFromIssue(i *jira.Issue) []issueEvent {
 	issueEvents = append(issueEvents, issueEvent{
 		EventTime:        time.Time(i.Fields.Created),
 		EventKind:        "created",
-		EventAuthor:      i.Fields.Reporter.Name,
+		EventAuthor:      requiredString(reporterName(i)),
 		IssueKey:         i.Key,
 		CommentBody:      nil,
 		StatusChangeFrom: nil,
@@ -115,6 +115,15 @@ func issueStateFromIssue(i *jira.Issue) issueState {
 		Components:        components(i),
 		FixVersions:       fixVersions(i),
 	}
+}
+
+// requiredString returns a string for the specified string pointer,
+// even if it's nil. In this case, returns `"N/A"`.
+func requiredString(s *string) string {
+	if s == nil {
+		return "N/A"
+	}
+	return *s
 }
 
 // Returns the issue's reporter name or nil if there is no

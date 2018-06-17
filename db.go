@@ -9,7 +9,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func queriesCreateTableJiraIssuesEvents() []string {
+// MaxOpenConns defines the maximum number of open connections
+// to the DB.
+const MaxOpenConns = 5 // for Heroku Postgres
+
+func queriesResetTableJiraIssuesEvents() []string {
 	return []string{
 		`DROP TABLE IF EXISTS "jira_issues_events";`,
 		`CREATE TABLE "jira_issues_events" (
@@ -56,7 +60,7 @@ func insertIssueEvent(db *sql.DB, e issueEvent) {
 	rows.Close()
 }
 
-func queriesCreateTableJiraIssuesStates() []string {
+func queriesResetTableJiraIssuesStates() []string {
 	return []string{
 		`DROP TABLE IF EXISTS "jira_issues_states";`,
 		`CREATE TABLE "jira_issues_states" (
@@ -147,6 +151,7 @@ func insertIssueState(db *sql.DB, s issueState) {
 func openDB() *sql.DB {
 	connStr := os.Getenv("DB_URL")
 	db, err := sql.Open("postgres", connStr)
+	db.SetMaxOpenConns(MaxOpenConns)
 	if err != nil {
 		log.Fatalln(fmt.Errorf("error in `openDB`: %s", err))
 	}
@@ -155,8 +160,8 @@ func openDB() *sql.DB {
 
 func initDB(db *sql.DB) {
 	queries := make([]string, 0)
-	queries = append(queries, queriesCreateTableJiraIssuesEvents()...)
-	queries = append(queries, queriesCreateTableJiraIssuesStates()...)
+	queries = append(queries, queriesResetTableJiraIssuesEvents()...)
+	queries = append(queries, queriesResetTableJiraIssuesStates()...)
 	err := doQueries(db, queries)
 	if err != nil {
 		log.Fatalln(fmt.Errorf("error in `initDB`: %s", err))

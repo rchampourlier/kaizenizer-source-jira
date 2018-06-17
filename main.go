@@ -36,25 +36,33 @@ func main() {
 	if len(os.Args) < 2 {
 		usage()
 	}
+	db := openDB()
+	defer db.Close()
+
 	switch os.Args[1] {
+
 	case "init-db":
-		db := openDB()
-		defer db.Close()
 		initDB(db)
+
 	case "sync":
-		db := openDB()
-		defer db.Close()
 		initDB(db) // reset of the DB before sync
 		newJiraClient().performSync(db)
+
+	case "sync-issue":
+		if len(os.Args) < 3 {
+			usage()
+		}
+		newJiraClient().performSyncForIssueKey(db, os.Args[2])
+
 	case "drop-db":
-		db := openDB()
-		defer db.Close()
 		dropDBTables(db)
+
 	case "explore-custom-fields":
 		if len(os.Args) < 3 {
 			usage()
 		}
 		newJiraClient().exploreCustomFields(os.Args[2])
+
 	default:
 		usage()
 	}
@@ -63,10 +71,11 @@ func main() {
 func usage() {
 	fmt.Printf(`Usage: go run main.go <action>
 
-Action may be:
+Available actions:
   - init-db
   - drop-db
   - sync
+  - sync-issue <issue-key>
   - explore-custom-fields <issue-key>
 
 `)
