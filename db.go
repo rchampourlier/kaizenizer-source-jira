@@ -18,30 +18,70 @@ func queriesResetTableJiraIssuesEvents() []string {
 		`DROP TABLE IF EXISTS "jira_issues_events";`,
 		`CREATE TABLE "jira_issues_events" (
 		  "id" serial primary key not null,
-		  "event_time" timestamp NOT NULL,
-		  "event_kind" text NOT NULL,
-		  "event_author" text NOT NULL,
-		  "issue_key" text NOT NULL,
-		  "comment_body" text,
-		  "status_change_from" text,
-		  "status_change_to" text,
-		  "inserted_at" timestamp(6) NOT NULL DEFAULT statement_timestamp()
+		  "inserted_at" TIMESTAMP(6) NOT NULL DEFAULT statement_timestamp(),
+		  "event_time" TIMESTAMP NOT NULL,
+		  "event_kind" TEXT NOT NULL,
+		  "event_author" TEXT NOT NULL,
+	          "issue_created_at" TIMESTAMP NOT NULL,
+		  "issue_updated_at" TIMESTAMP NOT NULL,
+		  "issue_key" TEXT NOT NULL,
+		  "issue_project" TEXT NOT NULL,
+		  "issue_status" TEXT NOT NULL,
+		  "issue_resolved_at" TIMESTAMP,
+		  "issue_priority" TEXT NOT NULL,
+		  "issue_summary" TEXT NOT NULL,
+		  "issue_description" TEXT,
+		  "issue_type" TEXT NOT NULL,
+		  "issue_labels" TEXT,
+		  "issue_assignee" TEXT,
+		  "issue_developer_backend" TEXT,
+		  "issue_developer_frontend" TEXT,
+		  "issue_reviewer" TEXT,
+		  "issue_product_owner" TEXT,
+		  "issue_bug_cause" TEXT,
+		  "issue_epic" TEXT,
+		  "issue_tribe" TEXT,
+		  "issue_components" TEXT,
+		  "issue_fix_versions" TEXT,
+		  "comment_body" TEXT,
+		  "status_change_from" TEXT,
+		  "status_change_to" TEXT
 		);`,
 	}
 }
 
-func insertIssueEvent(db *sql.DB, e issueEvent) {
+func insertIssueEvent(db *sql.DB, e issueEvent, s issueState) {
 	query := `
 	INSERT INTO jira_issues_events (
 		event_time,
 		event_kind,
 		event_author,
-		issue_key,
 		comment_body,
 		status_change_from,
-		status_change_to
+		status_change_to,
+		issue_key,
+		issue_created_at,
+		issue_updated_at,
+		issue_project,
+		issue_status,
+		issue_resolved_at,
+		issue_priority,
+		issue_summary,
+		issue_description,
+		issue_type,
+		issue_labels,
+		issue_assignee,
+		issue_developer_backend,
+		issue_developer_frontend,
+		issue_reviewer,
+		issue_product_owner,
+		issue_bug_cause,
+		issue_epic,
+		issue_tribe,
+		issue_components,
+		issue_fix_versions
 	)
-	VALUES ($1, $2, $3, $4, $5, $6, $7);
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27);
 	`
 
 	rows, err := db.Query(
@@ -49,10 +89,30 @@ func insertIssueEvent(db *sql.DB, e issueEvent) {
 		e.EventTime,
 		e.EventKind,
 		e.EventAuthor,
-		e.IssueKey,
 		e.CommentBody,
 		e.StatusChangeFrom,
 		e.StatusChangeTo,
+		e.IssueKey,
+		s.CreatedAt,
+		s.UpdatedAt,
+		s.Project,
+		s.Status,
+		s.ResolvedAt,
+		s.Priority,
+		s.Summary,
+		s.Description,
+		s.Type,
+		s.Labels,
+		s.Assignee,
+		s.DeveloperBackend,
+		s.DeveloperFrontend,
+		s.Reviewer,
+		s.ProductOwner,
+		s.BugCause,
+		s.Epic,
+		s.Tribe,
+		s.Components,
+		s.FixVersions,
 	)
 	if err != nil {
 		log.Fatalln(fmt.Errorf("error in `insertIssueEvent`: %s", err))
@@ -65,28 +125,28 @@ func queriesResetTableJiraIssuesStates() []string {
 		`DROP TABLE IF EXISTS "jira_issues_states";`,
 		`CREATE TABLE "jira_issues_states" (
 			"id" SERIAL PRIMARY KEY NOT NULL,
-			"created_at" TIMESTAMP NOT NULL,
-			"updated_at" TIMESTAMP NOT NULL,
-			"key" TEXT NOT NULL,
-			"project" TEXT NOT NULL,
-			"status" TEXT NOT NULL,
-			"resolved_at" TIMESTAMP,
-			"priority" TEXT NOT NULL,
-			"summary" TEXT NOT NULL,
-			"description" TEXT,
-			"type" TEXT NOT NULL,
-			"labels" TEXT,
-			"assignee" TEXT,
-			"developer_backend" TEXT,
-			"developer_frontend" TEXT,
-			"reviewer" TEXT,
-			"product_owner" TEXT,
-			"bug_cause" TEXT,
-			"epic" TEXT,
-			"tribe" TEXT,
-			"components" TEXT,
-			"fix_versions" TEXT,
-			"inserted_at" TIMESTAMP(6) NOT NULL DEFAULT statement_timestamp()
+			"inserted_at" TIMESTAMP(6) NOT NULL DEFAULT statement_timestamp(),
+			"issue_created_at" TIMESTAMP NOT NULL,
+			"issue_updated_at" TIMESTAMP NOT NULL,
+			"issue_key" TEXT NOT NULL,
+			"issue_project" TEXT NOT NULL,
+			"issue_status" TEXT NOT NULL,
+			"issue_resolved_at" TIMESTAMP,
+			"issue_priority" TEXT NOT NULL,
+			"issue_summary" TEXT NOT NULL,
+			"issue_description" TEXT,
+			"issue_type" TEXT NOT NULL,
+			"issue_labels" TEXT,
+			"issue_assignee" TEXT,
+			"issue_developer_backend" TEXT,
+			"issue_developer_frontend" TEXT,
+			"issue_reviewer" TEXT,
+			"issue_product_owner" TEXT,
+			"issue_bug_cause" TEXT,
+			"issue_epic" TEXT,
+			"issue_tribe" TEXT,
+			"issue_components" TEXT,
+			"issue_fix_versions" TEXT
 		);`,
 	}
 }
@@ -94,27 +154,27 @@ func queriesResetTableJiraIssuesStates() []string {
 func insertIssueState(db *sql.DB, s issueState) {
 	query := `
 	INSERT INTO jira_issues_states (
-		created_at,
-		updated_at,
-		key,
-		project,
-		status,
-		resolved_at,
-		priority,
-		summary,
-		description,
-		type,
-		labels,
-		assignee,
-		developer_backend,
-		developer_frontend,
-		reviewer,
-		product_owner,
-		bug_cause,
-		epic,
-		tribe,
-		components,
-		fix_versions
+		issue_created_at,
+		issue_updated_at,
+		issue_key,
+		issue_project,
+		issue_status,
+		issue_resolved_at,
+		issue_priority,
+		issue_summary,
+		issue_description,
+		issue_type,
+		issue_labels,
+		issue_assignee,
+		issue_developer_backend,
+		issue_developer_frontend,
+		issue_reviewer,
+		issue_product_owner,
+		issue_bug_cause,
+		issue_epic,
+		issue_tribe,
+		issue_components,
+		issue_fix_versions
 	)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21);
 	`
@@ -158,13 +218,13 @@ func openDB() *sql.DB {
 	return db
 }
 
-func initDB(db *sql.DB) {
+func resetDB(db *sql.DB) {
 	queries := make([]string, 0)
 	queries = append(queries, queriesResetTableJiraIssuesEvents()...)
 	queries = append(queries, queriesResetTableJiraIssuesStates()...)
 	err := doQueries(db, queries)
 	if err != nil {
-		log.Fatalln(fmt.Errorf("error in `initDB`: %s", err))
+		log.Fatalln(fmt.Errorf("error in `resetDB`: %s", err))
 	}
 }
 

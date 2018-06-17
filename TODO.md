@@ -2,11 +2,6 @@
 
 ## Ongoing
 
-### Data model
-
-- [x] For `jira_issue_events` replace `..._author` columns by a single `event_author` one
-- [ ] Add appropriate columns to `jira_issues_events` to simplify analysis (e.g. tribe, project, issue_type...)
-
 ---
 
 ## Future improvements
@@ -22,7 +17,7 @@
 
 ### Optimization
 
-- [ ] Pool the DB connections (with 30 workers it fails, 10 is ok)
+- [ ] Store a local cache copy of issue to enable faster reprocessing when changing only the mapping
 - [ ] Synchronize transparently with a DB table switch
 - [ ] Handle incremental synchronization to enable the synchronization to be performed regularly (e.g. every 10 minutes).
 
@@ -38,6 +33,11 @@
 ---
 
 ## Done 
+
+### Data model
+
+- [x] For `jira_issue_events` replace `..._author` columns by a single `event_author` one
+- [x] Add appropriate columns to `jira_issues_events` to simplify analysis (e.g. tribe, project, issue_type...)
 
 ### Bugs
 

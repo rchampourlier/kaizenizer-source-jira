@@ -26,10 +26,11 @@ func (c *jiraClient) performSync(db *sql.DB) {
 	p := tunny.NewFunc(poolSize, func(key interface{}) interface{} {
 		defer wg.Done()
 		i := c.getIssue(key.(string))
+		is := issueStateFromIssue(i)
 		for _, ie := range issueEventsFromIssue(i) {
-			insertIssueEvent(db, ie)
+			insertIssueEvent(db, ie, is)
 		}
-		insertIssueState(db, issueStateFromIssue(i))
+		insertIssueState(db, is)
 		return nil
 	})
 	defer p.Close()
@@ -54,10 +55,11 @@ func (c *jiraClient) performSyncForIssueKey(db *sql.DB, issueKey string) {
 	log.Printf("Sync starting\n")
 
 	i := c.getIssue(issueKey)
+	is := issueStateFromIssue(i)
 	for _, ie := range issueEventsFromIssue(i) {
-		insertIssueEvent(db, ie)
+		insertIssueEvent(db, ie, is)
 	}
-	insertIssueState(db, issueStateFromIssue(i))
+	insertIssueState(db, is)
 
 	log.Printf("Sync done in %f minutes\n", time.Since(beforeSync).Minutes())
 }

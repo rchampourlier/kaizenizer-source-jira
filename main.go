@@ -42,10 +42,10 @@ func main() {
 	switch os.Args[1] {
 
 	case "init-db":
-		initDB(db)
+		resetDB(db)
 
 	case "sync":
-		initDB(db) // reset of the DB before sync
+		resetDB(db) // reset of the DB before sync
 		newJiraClient().performSync(db)
 
 	case "sync-issue":
