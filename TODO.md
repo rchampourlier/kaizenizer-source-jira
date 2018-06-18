@@ -2,6 +2,12 @@
 
 ## Ongoing
 
+### Optimization
+
+- [ ] Store a local cache copy of issue to enable faster reprocessing when changing only the mapping
+- [ ] Synchronize transparently with a DB table switch
+- [ ] Handle incremental synchronization to enable the synchronization to be performed regularly (e.g. every 10 minutes).
+
 ---
 
 ## Future improvements
@@ -14,12 +20,6 @@
 ### Assignment data
 
 - [ ] Generate events for assignee change, with status information
-
-### Optimization
-
-- [ ] Store a local cache copy of issue to enable faster reprocessing when changing only the mapping
-- [ ] Synchronize transparently with a DB table switch
-- [ ] Handle incremental synchronization to enable the synchronization to be performed regularly (e.g. every 10 minutes).
 
 ### Source code data
 

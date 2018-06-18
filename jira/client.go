@@ -1,4 +1,4 @@
-package main
+package jira
 
 import (
 	"fmt"
@@ -8,23 +8,23 @@ import (
 	"github.com/andygrunwald/go-jira"
 )
 
-type jiraClient struct {
+type client struct {
 	*jira.Client
 }
 
-func newJiraClient() *jiraClient {
+func NewClient() *client {
 	tp := jira.BasicAuthTransport{
 		Username: os.Getenv("JIRA_USERNAME"),
 		Password: os.Getenv("JIRA_PASSWORD"),
 	}
-	client, err := jira.NewClient(tp.Client(), "https://jobteaser.atlassian.net")
+	c, err := jira.NewClient(tp.Client(), "https://jobteaser.atlassian.net")
 	if err != nil {
-		log.Fatalln(fmt.Errorf("error in `newJiraClient`: %s", err))
+		log.Fatalln(fmt.Errorf("error in `NewClient`: %s", err))
 	}
-	return &jiraClient{client}
+	return &client{c}
 }
 
-func (c *jiraClient) searchIssues(issueKeys chan string) {
+func (c *client) searchIssues(issueKeys chan string) {
 	jso := jira.SearchOptions{
 		MaxResults: 100,
 		StartAt:    0,
@@ -49,7 +49,7 @@ func (c *jiraClient) searchIssues(issueKeys chan string) {
 	}
 }
 
-func (c *jiraClient) getIssue(issueKey string) *jira.Issue {
+func (c *client) getIssue(issueKey string) *jira.Issue {
 	log.Printf("Fetching issue %s\n", issueKey)
 	i, _, err := c.Issue.Get(issueKey, &jira.GetQueryOptions{
 		Expand:       "names,schema,changelog",
@@ -62,8 +62,8 @@ func (c *jiraClient) getIssue(issueKey string) *jira.Issue {
 	return i
 }
 
-func (c *jiraClient) exploreCustomFields(issueKey string) {
-	i := newJiraClient().getIssue(issueKey)
+func (c *client) ExploreCustomFields(issueKey string) {
+	i := NewClient().getIssue(issueKey)
 	customFields := i.Fields.Unknowns
 	for n, v := range customFields {
 		fmt.Printf("%s -> %s\n", n, v)

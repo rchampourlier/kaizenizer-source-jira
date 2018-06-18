@@ -1,16 +1,16 @@
-package main
+package jira
 
 import (
-	"database/sql"
 	"log"
 	"sync"
 	"time"
 
 	"github.com/Jeffail/tunny"
-	_ "github.com/lib/pq"
+
+	"github.com/rchampourlier/agilizer-source-jira/db"
 )
 
-func (c *jiraClient) performSync(db *sql.DB) {
+func (c *client) PerformSync(db *db.DB, poolSize int) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 
@@ -28,9 +28,9 @@ func (c *jiraClient) performSync(db *sql.DB) {
 		i := c.getIssue(key.(string))
 		is := issueStateFromIssue(i)
 		for _, ie := range issueEventsFromIssue(i) {
-			insertIssueEvent(db, ie, is)
+			db.InsertIssueEvent(ie, is)
 		}
-		insertIssueState(db, is)
+		db.InsertIssueState(is)
 		return nil
 	})
 	defer p.Close()
@@ -50,16 +50,16 @@ func (c *jiraClient) performSync(db *sql.DB) {
 	log.Printf("Sync done in %f minutes\n", time.Since(beforeSync).Minutes())
 }
 
-func (c *jiraClient) performSyncForIssueKey(db *sql.DB, issueKey string) {
+func (c *client) PerformSyncForIssueKey(db *db.DB, issueKey string) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 
 	i := c.getIssue(issueKey)
 	is := issueStateFromIssue(i)
 	for _, ie := range issueEventsFromIssue(i) {
-		insertIssueEvent(db, ie, is)
+		db.InsertIssueEvent(ie, is)
 	}
-	insertIssueState(db, is)
+	db.InsertIssueState(is)
 
 	log.Printf("Sync done in %f minutes\n", time.Since(beforeSync).Minutes())
 }

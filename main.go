@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/rchampourlier/agilizer-source-jira/db"
+	"github.com/rchampourlier/agilizer-source-jira/jira"
 )
 
 const poolSize = 10
@@ -36,32 +39,32 @@ func main() {
 	if len(os.Args) < 2 {
 		usage()
 	}
-	db := openDB()
+	db := db.NewDB()
 	defer db.Close()
 
 	switch os.Args[1] {
 
 	case "init-db":
-		resetDB(db)
+		db.Reset()
 
 	case "sync":
-		resetDB(db) // reset of the DB before sync
-		newJiraClient().performSync(db)
+		db.Reset() // reset of the DB before sync
+		jira.NewClient().PerformSync(db, poolSize)
 
 	case "sync-issue":
 		if len(os.Args) < 3 {
 			usage()
 		}
-		newJiraClient().performSyncForIssueKey(db, os.Args[2])
+		jira.NewClient().PerformSyncForIssueKey(db, os.Args[2])
 
 	case "drop-db":
-		dropDBTables(db)
+		db.DropDBTables()
 
 	case "explore-custom-fields":
 		if len(os.Args) < 3 {
 			usage()
 		}
-		newJiraClient().exploreCustomFields(os.Args[2])
+		jira.NewClient().ExploreCustomFields(os.Args[2])
 
 	default:
 		usage()

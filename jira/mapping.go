@@ -1,51 +1,18 @@
-package main
+package jira
 
 import (
 	"log"
 	"time"
 
 	"github.com/andygrunwald/go-jira"
+
+	"github.com/rchampourlier/agilizer-source-jira/db"
 )
 
-type issueEvent struct {
-	EventTime        time.Time
-	EventKind        string
-	EventAuthor      string
-	IssueKey         string
-	CommentBody      *string
-	StatusChangeFrom *string
-	StatusChangeTo   *string
-}
+func issueEventsFromIssue(i *jira.Issue) []db.IssueEvent {
+	issueEvents := make([]db.IssueEvent, 0)
 
-type issueState struct {
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	Key               string
-	Project           *string
-	Status            *string
-	ResolvedAt        *time.Time
-	Priority          *string
-	Summary           *string
-	Description       *string
-	Type              *string
-	Labels            *string
-	Reporter          *string
-	Assignee          *string
-	DeveloperBackend  *string
-	DeveloperFrontend *string
-	Reviewer          *string
-	ProductOwner      *string
-	BugCause          *string
-	Epic              *string
-	Tribe             *string
-	Components        *string
-	FixVersions       *string
-}
-
-func issueEventsFromIssue(i *jira.Issue) []issueEvent {
-	issueEvents := make([]issueEvent, 0)
-
-	issueEvents = append(issueEvents, issueEvent{
+	issueEvents = append(issueEvents, db.IssueEvent{
 		EventTime:        time.Time(i.Fields.Created),
 		EventKind:        "created",
 		EventAuthor:      requiredString(reporterName(i)),
@@ -57,7 +24,7 @@ func issueEventsFromIssue(i *jira.Issue) []issueEvent {
 
 	if i.Fields.Comments != nil {
 		for _, c := range i.Fields.Comments.Comments {
-			issueEvents = append(issueEvents, issueEvent{
+			issueEvents = append(issueEvents, db.IssueEvent{
 				EventTime:        parseTime(c.Created),
 				EventKind:        "comment_added",
 				EventAuthor:      c.Author.Name,
@@ -74,7 +41,7 @@ func issueEventsFromIssue(i *jira.Issue) []issueEvent {
 				if cli.Field != "status" {
 					continue
 				}
-				issueEvents = append(issueEvents, issueEvent{
+				issueEvents = append(issueEvents, db.IssueEvent{
 					EventTime:        parseTime(h.Created),
 					EventKind:        "status_changed",
 					EventAuthor:      h.Author.Name,
@@ -90,8 +57,8 @@ func issueEventsFromIssue(i *jira.Issue) []issueEvent {
 	return issueEvents
 }
 
-func issueStateFromIssue(i *jira.Issue) issueState {
-	return issueState{
+func issueStateFromIssue(i *jira.Issue) db.IssueState {
+	return db.IssueState{
 		CreatedAt:         time.Time(i.Fields.Created),
 		UpdatedAt:         time.Time(i.Fields.Updated),
 		Key:               i.Key,
