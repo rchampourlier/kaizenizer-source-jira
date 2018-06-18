@@ -26,9 +26,9 @@
 - [ ] Extract Github pull requests from comments (see https://github.com/jobteaser/agilizer_source/blob/master/lib/agilizer/interface/jira/transformations/2_extract_github_pull_requests_from_comments.rb)
 - [ ] Add source code enrichments (see https://github.com/jobteaser/agilizer_source/blob/master/lib/agilizer/enrichments/source_code_changes.rb)
 
-### Implement OAuth authentication
+### Implement Jira OAuth authentication
 
-- [ ] Replace BasicAuth authentication with OAuth.
+- [ ] Change Jira authentication from BasicAuth to OAuth.
 
 ---
 
