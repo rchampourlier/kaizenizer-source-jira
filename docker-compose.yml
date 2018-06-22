@@ -1,0 +1,11 @@
+version: '3'
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: agilizer
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: agilizer
+    ports:
+      - "5432:5432"
+
