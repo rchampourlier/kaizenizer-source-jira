@@ -28,9 +28,9 @@ func (c *client) PerformSync(db *db.DB, poolSize int) {
 		i := c.getIssue(key.(string))
 		is := issueStateFromIssue(i)
 		for _, ie := range issueEventsFromIssue(i) {
-			db.InsertIssueEvent(ie, is)
+			db_.InsertIssueEvent(ie, is)
 		}
-		db.InsertIssueState(is)
+		db_.InsertIssueState(is)
 		return nil
 	})
 	defer p.Close()
@@ -50,16 +50,16 @@ func (c *client) PerformSync(db *db.DB, poolSize int) {
 	log.Printf("Sync done in %f minutes\n", time.Since(beforeSync).Minutes())
 }
 
-func (c *client) PerformSyncForIssueKey(db *db.DB, issueKey string) {
+func (c *client) PerformSyncForIssueKey(db_ *db.DB, issueKey string) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 
 	i := c.getIssue(issueKey)
 	is := issueStateFromIssue(i)
 	for _, ie := range issueEventsFromIssue(i) {
-		db.InsertIssueEvent(ie, is)
+		db_.InsertIssueEvent(ie, is)
 	}
-	db.InsertIssueState(is)
+	db_.InsertIssueState(is)
 
 	log.Printf("Sync done in %f minutes\n", time.Since(beforeSync).Minutes())
 }

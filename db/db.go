@@ -19,7 +19,7 @@ func NewDB() *DB {
 }
 
 func (db *DB) Close() error {
-	return db.Close()
+	return db.DB.Close()
 }
 
 // MaxOpenConns defines the maximum number of open connections
