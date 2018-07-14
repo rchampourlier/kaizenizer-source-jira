@@ -1,4 +1,4 @@
-package db
+package store
 
 import (
 	"database/sql"
@@ -10,16 +10,16 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type DB struct {
+type Store struct {
 	*sql.DB
 }
 
-func NewDB() *DB {
-	return &DB{openDB()}
+func NewStore() *Store {
+	return &Store{openDB()}
 }
 
-func (db *DB) Close() error {
-	return db.DB.Close()
+func (s *Store) Close() error {
+	return s.DB.Close()
 }
 
 // MaxOpenConns defines the maximum number of open connections
@@ -61,7 +61,8 @@ type IssueState struct {
 	FixVersions       *string
 }
 
-func (db *DB) InsertIssueEvent(e IssueEvent, s IssueState) {
+// InsertIssueEvent inserts an issue event in the store.
+func (s *Store) InsertIssueEvent(e IssueEvent, is IssueState) {
 	query := `
 	INSERT INTO jira_issues_events (
 		event_time,
@@ -95,7 +96,7 @@ func (db *DB) InsertIssueEvent(e IssueEvent, s IssueState) {
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27);
 	`
 
-	rows, err := db.Query(
+	rows, err := s.Query(
 		query,
 		e.EventTime,
 		e.EventKind,
@@ -104,26 +105,26 @@ func (db *DB) InsertIssueEvent(e IssueEvent, s IssueState) {
 		e.StatusChangeFrom,
 		e.StatusChangeTo,
 		e.IssueKey,
-		s.CreatedAt,
-		s.UpdatedAt,
-		s.Project,
-		s.Status,
-		s.ResolvedAt,
-		s.Priority,
-		s.Summary,
-		s.Description,
-		s.Type,
-		s.Labels,
-		s.Assignee,
-		s.DeveloperBackend,
-		s.DeveloperFrontend,
-		s.Reviewer,
-		s.ProductOwner,
-		s.BugCause,
-		s.Epic,
-		s.Tribe,
-		s.Components,
-		s.FixVersions,
+		is.CreatedAt,
+		is.UpdatedAt,
+		is.Project,
+		is.Status,
+		is.ResolvedAt,
+		is.Priority,
+		is.Summary,
+		is.Description,
+		is.Type,
+		is.Labels,
+		is.Assignee,
+		is.DeveloperBackend,
+		is.DeveloperFrontend,
+		is.Reviewer,
+		is.ProductOwner,
+		is.BugCause,
+		is.Epic,
+		is.Tribe,
+		is.Components,
+		is.FixVersions,
 	)
 	if err != nil {
 		log.Fatalln(fmt.Errorf("error in `InsertIssueEvent`: %s", err))
@@ -131,7 +132,7 @@ func (db *DB) InsertIssueEvent(e IssueEvent, s IssueState) {
 	rows.Close()
 }
 
-func (db *DB) InsertIssueState(s IssueState) {
+func (s *Store) InsertIssueState(is IssueState) {
 	query := `
 	INSERT INTO jira_issues_states (
 		issue_created_at,
@@ -158,29 +159,29 @@ func (db *DB) InsertIssueState(s IssueState) {
 	)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21);
 	`
-	rows, err := db.Query(
+	rows, err := s.Query(
 		query,
-		s.CreatedAt,
-		s.UpdatedAt,
-		s.Key,
-		s.Project,
-		s.Status,
-		s.ResolvedAt,
-		s.Priority,
-		s.Summary,
-		s.Description,
-		s.Type,
-		s.Labels,
-		s.Assignee,
-		s.DeveloperBackend,
-		s.DeveloperFrontend,
-		s.Reviewer,
-		s.ProductOwner,
-		s.BugCause,
-		s.Epic,
-		s.Tribe,
-		s.Components,
-		s.FixVersions,
+		is.CreatedAt,
+		is.UpdatedAt,
+		is.Key,
+		is.Project,
+		is.Status,
+		is.ResolvedAt,
+		is.Priority,
+		is.Summary,
+		is.Description,
+		is.Type,
+		is.Labels,
+		is.Assignee,
+		is.DeveloperBackend,
+		is.DeveloperFrontend,
+		is.Reviewer,
+		is.ProductOwner,
+		is.BugCause,
+		is.Epic,
+		is.Tribe,
+		is.Components,
+		is.FixVersions,
 	)
 	if err != nil {
 		log.Fatalln(fmt.Errorf("error in `InsertIssueState`: %s", err))
@@ -198,33 +199,35 @@ func openDB() *sql.DB {
 	return db
 }
 
-func (db *DB) Reset() {
-	queries := make([]string, 0)
-	queries = append(queries, queriesResetTableJiraIssuesEvents()...)
-	queries = append(queries, queriesResetTableJiraIssuesStates()...)
-	err := db.doQueries(queries)
-	if err != nil {
-		log.Fatalln(fmt.Errorf("error in `Reset`: %s", err))
+func (s *Store) Reset() {
+	for _, queries := range []([]string){
+		queriesResetTableJiraIssuesEvents(),
+		queriesResetTableJiraIssuesStates(),
+	} {
+		err := s.doQueries(queries)
+		if err != nil {
+			log.Fatalln(fmt.Errorf("error in `Reset`: %s", err))
+		}
 	}
 }
 
-func (db *DB) DropDBTables() {
+func (s *Store) Drop() {
 	queries := []string{
 		`DROP TABLE IF EXISTS "jira_issues_events";`,
 		`DROP TABLE IF EXISTS "jira_issues_states";`,
 	}
-	err := db.doQueries(queries)
+	err := s.doQueries(queries)
 	if err != nil {
 		log.Fatalln(fmt.Errorf("error in `dropDBTables`: %s", err))
 	}
 }
 
-// doQueries performs the specified queries on the passed db.
+// doQueries performs the specified queries on the associated DB.
 // If an error occurs, it returns the error. This function can't
 // be used for queries where you need the result rows.
-func (db *DB) doQueries(queries []string) error {
+func (s *Store) doQueries(queries []string) error {
 	for _, q := range queries {
-		rows, err := db.Query(q)
+		rows, err := s.Query(q)
 		if err != nil {
 			return err
 		}

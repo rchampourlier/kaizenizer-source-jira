@@ -6,13 +6,13 @@ import (
 
 	"github.com/andygrunwald/go-jira"
 
-	"github.com/rchampourlier/agilizer-source-jira/db"
+	"github.com/rchampourlier/agilizer-source-jira/store"
 )
 
-func issueEventsFromIssue(i *jira.Issue) []db.IssueEvent {
-	issueEvents := make([]db.IssueEvent, 0)
+func issueEventsFromIssue(i *jira.Issue) []store.IssueEvent {
+	issueEvents := make([]store.IssueEvent, 0)
 
-	issueEvents = append(issueEvents, db.IssueEvent{
+	issueEvents = append(issueEvents, store.IssueEvent{
 		EventTime:        time.Time(i.Fields.Created),
 		EventKind:        "created",
 		EventAuthor:      requiredString(reporterName(i)),
@@ -24,7 +24,7 @@ func issueEventsFromIssue(i *jira.Issue) []db.IssueEvent {
 
 	if i.Fields.Comments != nil {
 		for _, c := range i.Fields.Comments.Comments {
-			issueEvents = append(issueEvents, db.IssueEvent{
+			issueEvents = append(issueEvents, store.IssueEvent{
 				EventTime:        parseTime(c.Created),
 				EventKind:        "comment_added",
 				EventAuthor:      c.Author.Name,
@@ -41,7 +41,7 @@ func issueEventsFromIssue(i *jira.Issue) []db.IssueEvent {
 				if cli.Field != "status" {
 					continue
 				}
-				issueEvents = append(issueEvents, db.IssueEvent{
+				issueEvents = append(issueEvents, store.IssueEvent{
 					EventTime:        parseTime(h.Created),
 					EventKind:        "status_changed",
 					EventAuthor:      h.Author.Name,
@@ -57,8 +57,8 @@ func issueEventsFromIssue(i *jira.Issue) []db.IssueEvent {
 	return issueEvents
 }
 
-func issueStateFromIssue(i *jira.Issue) db.IssueState {
-	return db.IssueState{
+func issueStateFromIssue(i *jira.Issue) store.IssueState {
+	return store.IssueState{
 		CreatedAt:         time.Time(i.Fields.Created),
 		UpdatedAt:         time.Time(i.Fields.Updated),
 		Key:               i.Key,

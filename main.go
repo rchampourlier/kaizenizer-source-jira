@@ -4,31 +4,31 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rchampourlier/agilizer-source-jira/db"
 	"github.com/rchampourlier/agilizer-source-jira/jira"
+	"github.com/rchampourlier/agilizer-source-jira/store"
 )
 
 const poolSize = 10
 
 // Main program
 //
-// ### init-db
+// ### init
 //
 // Initializes the connected database. Drops the existing tables if
 // exist and create new ones according to the necessary schema.
 //
 // ### sync
 //
-// Performs the synchronization. Current strategy is a full synchronization
-// by fetching all issues and inserting the appropriate rows in the
-// DB tables (`jira_issues_issueEvents` for now, see `db.go` for details).
+// This fetches all issues from the Jira instance and generates both states
+// and events to the application's store.
 //
-// NB: The corresponding tables are dropped before performing the sync since
-// incremental sync is not supported.
+// ### sync-issue <issue key>
 //
-// ### drop-db-tables
+// Synchronizes only the issue specified by the passed key.
 //
-// Drops the tables used by this source (`jira_issues_issueEvents`).
+// ### reset
+//
+// Drops all Store tables and indexes used by this source.
 //
 // ### explore-custom-fields <issue key>
 //
@@ -39,26 +39,26 @@ func main() {
 	if len(os.Args) < 2 {
 		usage()
 	}
-	db := db.NewDB()
-	defer db.Close()
+	store := store.NewStore()
+	defer store.Close()
 
 	switch os.Args[1] {
 
-	case "init-db":
-		db.Reset()
+	case "init":
+		store.Reset()
 
 	case "sync":
-		db.Reset() // reset of the DB before sync
-		jira.NewClient().PerformSync(db, poolSize)
+		store.Reset()
+		jira.NewClient().PerformSync(store, poolSize)
 
 	case "sync-issue":
 		if len(os.Args) < 3 {
 			usage()
 		}
-		jira.NewClient().PerformSyncForIssueKey(db, os.Args[2])
+		jira.NewClient().PerformSyncForIssueKey(store, os.Args[2])
 
-	case "drop-db":
-		db.DropDBTables()
+	case "reset":
+		store.Drop()
 
 	case "explore-custom-fields":
 		if len(os.Args) < 3 {
@@ -75,12 +75,11 @@ func usage() {
 	fmt.Printf(`Usage: go run main.go <action>
 
 Available actions:
-  - init-db
-  - drop-db
+  - init
   - sync
   - sync-issue <issue-key>
+  - reset
   - explore-custom-fields <issue-key>
-
 `)
 	os.Exit(1)
 }

@@ -4,9 +4,8 @@
 
 ### Optimization
 
-- [ ] Store a local cache copy of issue to enable faster reprocessing when changing only the mapping
-- [ ] Synchronize transparently with a DB table switch
 - [ ] Handle incremental synchronization to enable the synchronization to be performed regularly (e.g. every 10 minutes).
+- [ ] Synchronize transparently with a DB table switch
 
 ---
 
@@ -32,14 +31,22 @@
 
 ---
 
-## Done 
+## History
 
-### Data model
+### 2018-07-14
+
+- [ ] Store a local cache copy of issue to enable faster reprocessing when changing only the mapping --> WON'T DO
+  Abandoned because storing the raw issue as JSON is not reversible (unmarshaling back to a `jira.Issue` fails, because the dates are not marshaled), so it would be too much work to cache the ra
+w issue (it would require either to fetch directly from the API, without using `go-jira`, or changing the marshaling).
+
+### Earlier
+
+#### Data model
 
 - [x] For `jira_issue_events` replace `..._author` columns by a single `event_author` one
 - [x] Add appropriate columns to `jira_issues_events` to simplify analysis (e.g. tribe, project, issue_type...)
 
-### Bugs
+#### Bugs
 
 - [x] Fix synchronization bug
 
@@ -76,18 +83,18 @@ created by main.(*jiraClient).performSync.func2
 exit status 1
 ```
 
-### Inserting issues (state)
+#### Inserting issues (state)
 
 - [x] Fix resolutiondate parsing
 - [x] Insert issues in the DB (state, not events), just like the existing source.
 - [x] Add custom fields to issue states
 
-### Misc
+#### Misc
 
 - [x] Fix bug, pool closed once the search is complete, without waiting the fetches to finish
 - [X] Convert event's `time` to a datetime column
 
-### Connection with AgilizerSource PostgreSQL db
+#### Connection with AgilizerSource PostgreSQL db
 
 - [x] DB connection
 - [x] DB initialization (create tables...)
