@@ -10,14 +10,19 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// Store represents the application's store and
+// contains the connection to the DB.
 type Store struct {
 	*sql.DB
 }
 
+// NewStore returns a `Store` with an open connection
+// to the DB.
 func NewStore() *Store {
 	return &Store{openDB()}
 }
 
+// Close closes the connection to the DB.
 func (s *Store) Close() error {
 	return s.DB.Close()
 }
@@ -26,6 +31,8 @@ func (s *Store) Close() error {
 // to the DB.
 const MaxOpenConns = 5 // for Heroku Postgres
 
+// IssueEvent represents a change event on an issue to be stored
+// in the DB.
 type IssueEvent struct {
 	EventTime        time.Time
 	EventKind        string
@@ -36,6 +43,8 @@ type IssueEvent struct {
 	StatusChangeTo   *string
 }
 
+// IssueState represents the state of an issue to be stored
+// in the DB.
 type IssueState struct {
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
@@ -132,6 +141,7 @@ func (s *Store) InsertIssueEvent(e IssueEvent, is IssueState) {
 	rows.Close()
 }
 
+// InsertIssueState inserts a new `IssueState` record in the db
 func (s *Store) InsertIssueState(is IssueState) {
 	query := `
 	INSERT INTO jira_issues_states (
@@ -189,6 +199,8 @@ func (s *Store) InsertIssueState(is IssueState) {
 	rows.Close()
 }
 
+// Reset resets the tables for this source by dropping the
+// tables and re-creating them.
 func (s *Store) Reset() {
 	for _, queries := range []([]string){
 		queriesResetTableJiraIssuesEvents(),
@@ -214,6 +226,8 @@ func (s *Store) DropAllForIssueKey(issueKey string) {
 	}
 }
 
+// Drop drops the tables used by this source
+// (`jira_issues_events` and `jira_issues_states`)
 func (s *Store) Drop() {
 	queries := []string{
 		`DROP TABLE IF EXISTS "jira_issues_events";`,

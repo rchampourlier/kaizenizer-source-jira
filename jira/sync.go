@@ -22,7 +22,7 @@ import (
 // - For each updated issue, the records already in the store are
 //   dropped (e.g. the issue's state and events) so they can be
 //   recreated.
-func (c *client) PerformIncrementalSync(store *store.Store, poolSize int) {
+func (c *Client) PerformIncrementalSync(store *store.Store, poolSize int) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 
@@ -76,7 +76,7 @@ func (c *client) PerformIncrementalSync(store *store.Store, poolSize int) {
 //
 // Each fetched issue is then processed to generate `IssueState` and
 // `IssueEvent` records that are stored in the application's store.
-func (c *client) PerformSync(store *store.Store, poolSize int) {
+func (c *Client) PerformSync(store *store.Store, poolSize int) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 
@@ -91,6 +91,7 @@ func (c *client) PerformSync(store *store.Store, poolSize int) {
 	p := tunny.NewFunc(poolSize, func(key interface{}) interface{} {
 		defer wg.Done()
 
+		store.DropAllForIssueKey(key.(string))
 		i := c.getIssue(key.(string))
 		is := issueStateFromIssue(i)
 		for _, ie := range issueEventsFromIssue(i) {
@@ -118,7 +119,7 @@ func (c *client) PerformSync(store *store.Store, poolSize int) {
 
 // PerformSyncForIssueKey is the same as `PerformSync` but for a single
 // issue specified by its key.
-func (c *client) PerformSyncForIssueKey(store *store.Store, issueKey string) {
+func (c *Client) PerformSyncForIssueKey(store *store.Store, issueKey string) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 

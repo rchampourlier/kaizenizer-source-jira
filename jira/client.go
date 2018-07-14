@@ -8,11 +8,15 @@ import (
 	"github.com/andygrunwald/go-jira"
 )
 
-type client struct {
+// Client represents an interface to Jira API. It embeds
+// `go-jira`'s `jira.Client`.
+type Client struct {
 	*jira.Client
 }
 
-func NewClient() *client {
+// NewClient returns an usable `jira.client` usable to access Jira
+// API. It embeds a `jira.Client`.
+func NewClient() *Client {
 	tp := jira.BasicAuthTransport{
 		Username: os.Getenv("JIRA_USERNAME"),
 		Password: os.Getenv("JIRA_PASSWORD"),
@@ -21,10 +25,10 @@ func NewClient() *client {
 	if err != nil {
 		log.Fatalln(fmt.Errorf("error in `NewClient`: %s", err))
 	}
-	return &client{c}
+	return &Client{c}
 }
 
-func (c *client) searchIssues(query string, issueKeys chan string) {
+func (c *Client) searchIssues(query string, issueKeys chan string) {
 	jso := jira.SearchOptions{
 		MaxResults: 100,
 		StartAt:    0,
@@ -49,7 +53,7 @@ func (c *client) searchIssues(query string, issueKeys chan string) {
 	}
 }
 
-func (c *client) getIssue(issueKey string) *jira.Issue {
+func (c *Client) getIssue(issueKey string) *jira.Issue {
 	log.Printf("Fetching issue %s\n", issueKey)
 	i, _, err := c.Issue.Get(issueKey, &jira.GetQueryOptions{
 		Expand:       "names,schema,changelog",
@@ -62,7 +66,11 @@ func (c *client) getIssue(issueKey string) *jira.Issue {
 	return i
 }
 
-func (c *client) ExploreCustomFields(issueKey string) {
+// ExploreCustomFields prints information about custom fields
+// by fetching the specified issue. This can be used to
+// retrieve the custom fields IDs by fetching an issue with
+// identifiable values for these fields.
+func (c *Client) ExploreCustomFields(issueKey string) {
 	i := NewClient().getIssue(issueKey)
 	customFields := i.Fields.Unknowns
 	for n, v := range customFields {
