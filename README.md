@@ -25,9 +25,18 @@ The goal of this project is to enable teams using Jira to perform analyses on Ji
 
 ## How it works
 
-The tool will connect to Jira using the API and fetch all issues. For each issue, a set of events (rows in the SQL `events` table) will be generated to represent all updates that occurred on the issue.
+The tool will connect to Jira using the API and fetch all issues. For each issue:
+
+- a simplified representation of the issue is stored in the `jira_issues_states` table,
+- a set of events is created in the `jira_issues_events` to represent the updates that occurred on the issue (e.g. `created`, `comment_added`, `status_changed`).
 
 The tool will perform a request to only retrieve the issues modified since the last synchronization, using the timestamp of the last event. All corresponding issues will be processed to generate new events as needed.
+
+### Requirements
+
+- A PostgreSQL database
+- Jira username and password
+- `cp .env.example` updated as necessary
 
 ### How to use
 
