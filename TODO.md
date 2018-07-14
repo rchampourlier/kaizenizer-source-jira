@@ -5,6 +5,8 @@
 ### Optimization
 
 - [ ] Handle incremental synchronization to enable the synchronization to be performed regularly (e.g. every 10 minutes).
+  - [x] Fetch only issues updated after max `issue_updated_at`
+  - [ ] Drop previous states and events for the updated issues in an incremental sync
 - [ ] Synchronize transparently with a DB table switch
 
 ---

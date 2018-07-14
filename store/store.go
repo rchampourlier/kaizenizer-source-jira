@@ -189,16 +189,6 @@ func (s *Store) InsertIssueState(is IssueState) {
 	rows.Close()
 }
 
-func openDB() *sql.DB {
-	connStr := os.Getenv("DB_URL")
-	db, err := sql.Open("postgres", connStr)
-	db.SetMaxOpenConns(MaxOpenConns)
-	if err != nil {
-		log.Fatalln(fmt.Errorf("error in `openDB`: %s", err))
-	}
-	return db
-}
-
 func (s *Store) Reset() {
 	for _, queries := range []([]string){
 		queriesResetTableJiraIssuesEvents(),
@@ -211,6 +201,19 @@ func (s *Store) Reset() {
 	}
 }
 
+// DropAllForIssueKey drops all records from `jira_issues_states` and
+// `jira_issues_events` that match the specified issue key.
+func (s *Store) DropAllForIssueKey(issueKey string) {
+	queries := []string{
+		"DELETE FROM jira_issues_events WHERE issue_key = '" + issueKey + "';",
+		"DELETE FROM jira_issues_states WHERE issue_key = '" + issueKey + "';",
+	}
+	err := s.doQueries(queries)
+	if err != nil {
+		log.Fatalln(fmt.Errorf("error in `DropAllForIssueKey(..)`: %s", err))
+	}
+}
+
 func (s *Store) Drop() {
 	queries := []string{
 		`DROP TABLE IF EXISTS "jira_issues_events";`,
@@ -218,8 +221,34 @@ func (s *Store) Drop() {
 	}
 	err := s.doQueries(queries)
 	if err != nil {
-		log.Fatalln(fmt.Errorf("error in `dropDBTables`: %s", err))
+		log.Fatalln(fmt.Errorf("error in `Drop()`: %s", err))
 	}
+}
+
+// GetMaxUpdatedAt returns the max value of `issue_updated_at`
+// from the `jira_issues_states` table.
+func (s *Store) GetMaxUpdatedAt() *time.Time {
+	var maxUpdatedAt time.Time
+	err := s.QueryRow("SELECT MAX(issue_updated_at) FROM jira_issues_states").Scan(&maxUpdatedAt)
+	switch {
+	case err == sql.ErrNoRows:
+		log.Printf("No user with that ID.")
+	case err != nil:
+		log.Fatal(err)
+	default:
+		return &maxUpdatedAt
+	}
+	return nil
+}
+
+func openDB() *sql.DB {
+	connStr := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", connStr)
+	db.SetMaxOpenConns(MaxOpenConns)
+	if err != nil {
+		log.Fatalln(fmt.Errorf("error in `openDB`: %s", err))
+	}
+	return db
 }
 
 // doQueries performs the specified queries on the associated DB.
