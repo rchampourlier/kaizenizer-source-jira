@@ -24,13 +24,13 @@ func NewClient() *client {
 	return &client{c}
 }
 
-func (c *client) searchIssues(issueKeys chan string) {
+func (c *client) searchIssues(query string, issueKeys chan string) {
 	jso := jira.SearchOptions{
 		MaxResults: 100,
 		StartAt:    0,
 	}
 	for {
-		pIssues, res, err := c.Issue.Search("order by created DESC", &jso)
+		pIssues, res, err := c.Issue.Search(query, &jso)
 		if err != nil {
 			// TODO: instead of crashing, should handle the error and retry
 			log.Fatalln(fmt.Errorf("error in `searchIssues`: %s", err))

@@ -19,6 +19,11 @@ const poolSize = 10
 //
 // ### sync
 //
+// Performs an incremental sync, only fetching issues updated after
+// the maximum `updated_at` of issues already stored in the application.
+//
+// ### sync-full
+//
 // This fetches all issues from the Jira instance and generates both states
 // and events to the application's store.
 //
@@ -48,6 +53,9 @@ func main() {
 		store.Reset()
 
 	case "sync":
+		jira.NewClient().PerformIncrementalSync(store, poolSize)
+
+	case "sync-full":
 		store.Reset()
 		jira.NewClient().PerformSync(store, poolSize)
 
@@ -77,6 +85,7 @@ func usage() {
 Available actions:
   - init
   - sync
+  - sync-full
   - sync-issue <issue-key>
   - reset
   - explore-custom-fields <issue-key>
