@@ -37,6 +37,7 @@ func (c *client) PerformIncrementalSync(store *store.Store, poolSize int) {
 	p := tunny.NewFunc(poolSize, func(key interface{}) interface{} {
 		defer wg.Done()
 
+		store.DropAllForIssueKey(key.(string))
 		i := c.getIssue(key.(string))
 		is := issueStateFromIssue(i)
 		for _, ie := range issueEventsFromIssue(i) {
