@@ -1,54 +1,24 @@
-# TODO
+# History
 
-## Ongoing
+## 2018-07-14
 
-### Optimization
-
-- [ ] Handle incremental synchronization to enable the synchronization to be performed regularly (e.g. every 10 minutes).
+- [x] Handle incremental synchronization to enable the synchronization to be performed regularly (e.g. every 10 minutes).
   - [x] Fetch only issues updated after max `issue_updated_at`
-  - [ ] Drop previous states and events for the updated issues in an incremental sync
-- [ ] Synchronize transparently with a DB table switch
-
----
-
-## Future improvements
-
-
-### Deployment
-
-- [ ] Deploy and schedule synchronization
-
-### Assignment data
-
-- [ ] Generate events for assignee change, with status information
-
-### Source code data
-
-- [ ] Extract Github pull requests from comments (see https://github.com/jobteaser/agilizer_source/blob/master/lib/agilizer/interface/jira/transformations/2_extract_github_pull_requests_from_comments.rb)
-- [ ] Add source code enrichments (see https://github.com/jobteaser/agilizer_source/blob/master/lib/agilizer/enrichments/source_code_changes.rb)
-
-### Implement Jira OAuth authentication
-
-- [ ] Change Jira authentication from BasicAuth to OAuth.
-
----
-
-## History
-
-### 2018-07-14
-
+  - [x] Drop previous states and events for the updated issues in an incremental sync
 - [ ] Store a local cache copy of issue to enable faster reprocessing when changing only the mapping --> WON'T DO
   Abandoned because storing the raw issue as JSON is not reversible (unmarshaling back to a `jira.Issue` fails, because the dates are not marshaled), so it would be too much work to cache the ra
 w issue (it would require either to fetch directly from the API, without using `go-jira`, or changing the marshaling).
+- [ ] Synchronize transparently with a DB table switch --> WON'T DO
+  Doesn't seem necessary with the incremental sync, for now at least.
 
-### Earlier
+## Earlier
 
-#### Data model
+### Data model
 
 - [x] For `jira_issue_events` replace `..._author` columns by a single `event_author` one
 - [x] Add appropriate columns to `jira_issues_events` to simplify analysis (e.g. tribe, project, issue_type...)
 
-#### Bugs
+### Bugs
 
 - [x] Fix synchronization bug
 
@@ -85,18 +55,18 @@ created by main.(*jiraClient).performSync.func2
 exit status 1
 ```
 
-#### Inserting issues (state)
+### Inserting issues (state)
 
 - [x] Fix resolutiondate parsing
 - [x] Insert issues in the DB (state, not events), just like the existing source.
 - [x] Add custom fields to issue states
 
-#### Misc
+### Misc
 
 - [x] Fix bug, pool closed once the search is complete, without waiting the fetches to finish
 - [X] Convert event's `time` to a datetime column
 
-#### Connection with AgilizerSource PostgreSQL db
+### Connection with AgilizerSource PostgreSQL db
 
 - [x] DB connection
 - [x] DB initialization (create tables...)
