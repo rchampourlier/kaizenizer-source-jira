@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -16,20 +15,12 @@ type Store struct {
 	*sql.DB
 }
 
-// NewStore returns a `Store` with an open connection
-// to the DB.
-func NewStore() *Store {
-	return &Store{openDB()}
+// NewStore returns a `Store` storing the specified DB.
+// The passed DB should already be open and ready to
+// receive queries.
+func NewStore(db *sql.DB) *Store {
+	return &Store{db}
 }
-
-// Close closes the connection to the DB.
-func (s *Store) Close() error {
-	return s.DB.Close()
-}
-
-// MaxOpenConns defines the maximum number of open connections
-// to the DB.
-const MaxOpenConns = 5 // for Heroku Postgres
 
 // IssueEvent represents a change event on an issue to be stored
 // in the DB.
@@ -70,8 +61,146 @@ type IssueState struct {
 	FixVersions       *string
 }
 
-// InsertIssueEvent inserts an issue event in the store.
-func (s *Store) InsertIssueEvent(e IssueEvent, is IssueState) {
+// ReplaceIssueStateAndEvents replace the existing state and
+// events records for the specified issue key, then inserts
+// the new state and events records.
+//
+// The operations are performed atomically using a DB transaction.
+func (s *Store) ReplaceIssueStateAndEvents(k string, is IssueState, ies []IssueEvent) (err error) {
+	tx, err := s.Begin()
+
+	defer func() {
+		switch err {
+		case nil:
+			err = tx.Commit()
+		default:
+			tx.Rollback()
+		}
+	}()
+
+	if err = dropAllForIssueKey(tx, k); err != nil {
+		return
+	}
+	if err = insertIssueState(tx, is); err != nil {
+		return
+	}
+	if err = insertIssueEvents(tx, ies, is); err != nil {
+		return
+	}
+
+	return
+}
+
+// GetMaxUpdatedAt returns the max value of `issue_updated_at`
+// from the `jira_issues_states` table.
+func (s *Store) GetMaxUpdatedAt() *time.Time {
+	var maxUpdatedAt time.Time
+	err := s.QueryRow("SELECT MAX(issue_updated_at) FROM jira_issues_states").Scan(&maxUpdatedAt)
+	switch {
+	case err != nil:
+		log.Fatal(err)
+	default:
+		return &maxUpdatedAt
+	}
+	return nil
+}
+
+// CreateTables creates the `jira_issues_events` and
+// `jira_issues_states` tables used by this
+// application.
+func (s *Store) CreateTables() {
+	queries := []string{
+		`CREATE TABLE "jira_issues_states" (
+			"id" SERIAL PRIMARY KEY NOT NULL,
+			"inserted_at" TIMESTAMP(6) NOT NULL DEFAULT statement_timestamp(),
+			"issue_created_at" TIMESTAMP NOT NULL,
+			"issue_updated_at" TIMESTAMP NOT NULL,
+			"issue_key" TEXT NOT NULL,
+			"issue_project" TEXT NOT NULL,
+			"issue_status" TEXT NOT NULL,
+			"issue_resolved_at" TIMESTAMP,
+			"issue_priority" TEXT NOT NULL,
+			"issue_summary" TEXT NOT NULL,
+			"issue_description" TEXT,
+			"issue_type" TEXT NOT NULL,
+			"issue_labels" TEXT,
+			"issue_assignee" TEXT,
+			"issue_developer_backend" TEXT,
+			"issue_developer_frontend" TEXT,
+			"issue_reviewer" TEXT,
+			"issue_product_owner" TEXT,
+			"issue_bug_cause" TEXT,
+			"issue_epic" TEXT,
+			"issue_tribe" TEXT,
+			"issue_components" TEXT,
+			"issue_fix_versions" TEXT
+		);`,
+		`CREATE TABLE "jira_issues_events" (
+			"id" serial primary key not null,
+			"inserted_at" TIMESTAMP(6) NOT NULL DEFAULT statement_timestamp(),
+			"event_time" TIMESTAMP NOT NULL,
+			"event_kind" TEXT NOT NULL,
+			"event_author" TEXT NOT NULL,
+			"issue_created_at" TIMESTAMP NOT NULL,
+			"issue_updated_at" TIMESTAMP NOT NULL,
+			"issue_key" TEXT NOT NULL,
+			"issue_project" TEXT NOT NULL,
+			"issue_status" TEXT NOT NULL,
+			"issue_resolved_at" TIMESTAMP,
+			"issue_priority" TEXT NOT NULL,
+			"issue_summary" TEXT NOT NULL,
+			"issue_description" TEXT,
+			"issue_type" TEXT NOT NULL,
+			"issue_labels" TEXT,
+			"issue_assignee" TEXT,
+			"issue_developer_backend" TEXT,
+			"issue_developer_frontend" TEXT,
+			"issue_reviewer" TEXT,
+			"issue_product_owner" TEXT,
+			"issue_bug_cause" TEXT,
+			"issue_epic" TEXT,
+			"issue_tribe" TEXT,
+			"issue_components" TEXT,
+			"issue_fix_versions" TEXT,
+			"comment_body" TEXT,
+			"status_change_from" TEXT,
+			"status_change_to" TEXT
+		);`,
+	}
+	err := s.exec(queries)
+	if err != nil {
+		log.Fatalln(fmt.Errorf("error in `Reset`: %s", err))
+	}
+}
+
+// Drop drops the tables used by this source
+// (`jira_issues_events` and `jira_issues_states`)
+func (s *Store) DropTables() {
+	queries := []string{
+		`DROP TABLE IF EXISTS "jira_issues_states";`,
+		`DROP TABLE IF EXISTS "jira_issues_events";`,
+	}
+	err := s.exec(queries)
+	if err != nil {
+		log.Fatalln(fmt.Errorf("error in `Drop()`: %s", err))
+	}
+}
+
+// insertIssueEvents inserts the specified events in the store in
+// the passed transaction. The passed `IssueState` is used to enrich
+// the event records.
+func insertIssueEvents(tx *sql.Tx, ies []IssueEvent, is IssueState) (err error) {
+	for _, ie := range ies {
+		if err = insertIssueEvent(tx, ie, is); err != nil {
+			return err
+		}
+	}
+	return
+}
+
+// insertIssueEvent inserts an issue event in the store through
+// the specified transaction
+func insertIssueEvent(tx *sql.Tx, ie IssueEvent, is IssueState) (err error) {
 	query := `
 	INSERT INTO jira_issues_events (
 		event_time,
@@ -105,15 +234,15 @@ func (s *Store) InsertIssueEvent(e IssueEvent, is IssueState) {
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27);
 	`
 
-	rows, err := s.Query(
+	_, err = tx.Exec(
 		query,
-		e.EventTime,
-		e.EventKind,
-		e.EventAuthor,
-		e.CommentBody,
-		e.StatusChangeFrom,
-		e.StatusChangeTo,
-		e.IssueKey,
+		ie.EventTime,
+		ie.EventKind,
+		ie.EventAuthor,
+		ie.CommentBody,
+		ie.StatusChangeFrom,
+		ie.StatusChangeTo,
+		ie.IssueKey,
 		is.CreatedAt,
 		is.UpdatedAt,
 		is.Project,
@@ -135,14 +264,12 @@ func (s *Store) InsertIssueEvent(e IssueEvent, is IssueState) {
 		is.Components,
 		is.FixVersions,
 	)
-	if err != nil {
-		log.Fatalln(fmt.Errorf("error in `InsertIssueEvent`: %s", err))
-	}
-	rows.Close()
+	return
 }
 
-// InsertIssueState inserts a new `IssueState` record in the db
-func (s *Store) InsertIssueState(is IssueState) {
+// insertIssueState inserts a new `IssueState` record in the store within
+// the specified transaction
+func insertIssueState(tx *sql.Tx, is IssueState) (err error) {
 	query := `
 	INSERT INTO jira_issues_states (
 		issue_created_at,
@@ -169,7 +296,7 @@ func (s *Store) InsertIssueState(is IssueState) {
 	)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21);
 	`
-	rows, err := s.Query(
+	_, err = tx.Exec(
 		query,
 		is.CreatedAt,
 		is.UpdatedAt,
@@ -193,159 +320,27 @@ func (s *Store) InsertIssueState(is IssueState) {
 		is.Components,
 		is.FixVersions,
 	)
-	if err != nil {
-		log.Fatalln(fmt.Errorf("error in `InsertIssueState`: %s", err))
-	}
-	rows.Close()
+	return
 }
 
-// Reset resets the tables for this source by dropping the
-// tables and re-creating them.
-func (s *Store) Reset() {
-	for _, queries := range []([]string){
-		queriesResetTableJiraIssuesEvents(),
-		queriesResetTableJiraIssuesStates(),
-	} {
-		err := s.doQueries(queries)
-		if err != nil {
-			log.Fatalln(fmt.Errorf("error in `Reset`: %s", err))
-		}
-	}
-}
-
-// DropAllForIssueKey drops all records from `jira_issues_states` and
+// dropAllForIssueKey drops all records from `jira_issues_states` and
 // `jira_issues_events` that match the specified issue key.
-func (s *Store) DropAllForIssueKey(issueKey string) {
-	queries := []string{
-		"DELETE FROM jira_issues_events WHERE issue_key = '" + issueKey + "';",
-		"DELETE FROM jira_issues_states WHERE issue_key = '" + issueKey + "';",
-	}
-	err := s.doQueries(queries)
+func dropAllForIssueKey(tx *sql.Tx, issueKey string) (err error) {
+	_, err = tx.Exec("DELETE FROM jira_issues_events WHERE issue_key = '" + issueKey + "';")
 	if err != nil {
-		log.Fatalln(fmt.Errorf("error in `DropAllForIssueKey(..)`: %s", err))
+		return
 	}
+	_, err = tx.Exec("DELETE FROM jira_issues_states WHERE issue_key = '" + issueKey + "';")
+	return
 }
 
-// Drop drops the tables used by this source
-// (`jira_issues_events` and `jira_issues_states`)
-func (s *Store) Drop() {
-	queries := []string{
-		`DROP TABLE IF EXISTS "jira_issues_events";`,
-		`DROP TABLE IF EXISTS "jira_issues_states";`,
-	}
-	err := s.doQueries(queries)
-	if err != nil {
-		log.Fatalln(fmt.Errorf("error in `Drop()`: %s", err))
-	}
-}
-
-// GetMaxUpdatedAt returns the max value of `issue_updated_at`
-// from the `jira_issues_states` table.
-func (s *Store) GetMaxUpdatedAt() *time.Time {
-	var maxUpdatedAt time.Time
-	err := s.QueryRow("SELECT MAX(issue_updated_at) FROM jira_issues_states").Scan(&maxUpdatedAt)
-	switch {
-	case err == sql.ErrNoRows:
-		log.Printf("No user with that ID.")
-	case err != nil:
-		log.Fatal(err)
-	default:
-		return &maxUpdatedAt
-	}
-	return nil
-}
-
-func openDB() *sql.DB {
-	connStr := os.Getenv("DB_URL")
-	db, err := sql.Open("postgres", connStr)
-	db.SetMaxOpenConns(MaxOpenConns)
-	if err != nil {
-		log.Fatalln(fmt.Errorf("error in `openDB`: %s", err))
-	}
-	return db
-}
-
-// doQueries performs the specified queries on the associated DB.
-// If an error occurs, it returns the error. This function can't
-// be used for queries where you need the result rows.
-func (s *Store) doQueries(queries []string) error {
-	for _, q := range queries {
-		rows, err := s.Query(q)
+// exec executes the passed SQL commands on the DB using `Exec`.
+func (s *Store) exec(cmds []string) (err error) {
+	for _, c := range cmds {
+		_, err = s.Exec(c)
 		if err != nil {
-			return err
-		}
-		defer rows.Close()
-		if err = rows.Err(); err != nil {
-			return err
+			return
 		}
 	}
-	return nil
-}
-
-func queriesResetTableJiraIssuesEvents() []string {
-	return []string{
-		`DROP TABLE IF EXISTS "jira_issues_events";`,
-		`CREATE TABLE "jira_issues_events" (
-		  "id" serial primary key not null,
-		  "inserted_at" TIMESTAMP(6) NOT NULL DEFAULT statement_timestamp(),
-		  "event_time" TIMESTAMP NOT NULL,
-		  "event_kind" TEXT NOT NULL,
-		  "event_author" TEXT NOT NULL,
-	          "issue_created_at" TIMESTAMP NOT NULL,
-		  "issue_updated_at" TIMESTAMP NOT NULL,
-		  "issue_key" TEXT NOT NULL,
-		  "issue_project" TEXT NOT NULL,
-		  "issue_status" TEXT NOT NULL,
-		  "issue_resolved_at" TIMESTAMP,
-		  "issue_priority" TEXT NOT NULL,
-		  "issue_summary" TEXT NOT NULL,
-		  "issue_description" TEXT,
-		  "issue_type" TEXT NOT NULL,
-		  "issue_labels" TEXT,
-		  "issue_assignee" TEXT,
-		  "issue_developer_backend" TEXT,
-		  "issue_developer_frontend" TEXT,
-		  "issue_reviewer" TEXT,
-		  "issue_product_owner" TEXT,
-		  "issue_bug_cause" TEXT,
-		  "issue_epic" TEXT,
-		  "issue_tribe" TEXT,
-		  "issue_components" TEXT,
-		  "issue_fix_versions" TEXT,
-		  "comment_body" TEXT,
-		  "status_change_from" TEXT,
-		  "status_change_to" TEXT
-		);`,
-	}
-}
-
-func queriesResetTableJiraIssuesStates() []string {
-	return []string{
-		`DROP TABLE IF EXISTS "jira_issues_states";`,
-		`CREATE TABLE "jira_issues_states" (
-			"id" SERIAL PRIMARY KEY NOT NULL,
-			"inserted_at" TIMESTAMP(6) NOT NULL DEFAULT statement_timestamp(),
-			"issue_created_at" TIMESTAMP NOT NULL,
-			"issue_updated_at" TIMESTAMP NOT NULL,
-			"issue_key" TEXT NOT NULL,
-			"issue_project" TEXT NOT NULL,
-			"issue_status" TEXT NOT NULL,
-			"issue_resolved_at" TIMESTAMP,
-			"issue_priority" TEXT NOT NULL,
-			"issue_summary" TEXT NOT NULL,
-			"issue_description" TEXT,
-			"issue_type" TEXT NOT NULL,
-			"issue_labels" TEXT,
-			"issue_assignee" TEXT,
-			"issue_developer_backend" TEXT,
-			"issue_developer_frontend" TEXT,
-			"issue_reviewer" TEXT,
-			"issue_product_owner" TEXT,
-			"issue_bug_cause" TEXT,
-			"issue_epic" TEXT,
-			"issue_tribe" TEXT,
-			"issue_components" TEXT,
-			"issue_fix_versions" TEXT
-		);`,
-	}
+	return
 }

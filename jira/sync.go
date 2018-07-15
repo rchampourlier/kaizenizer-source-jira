@@ -37,13 +37,8 @@ func (c *Client) PerformIncrementalSync(store *store.Store, poolSize int) {
 	p := tunny.NewFunc(poolSize, func(key interface{}) interface{} {
 		defer wg.Done()
 
-		store.DropAllForIssueKey(key.(string))
 		i := c.getIssue(key.(string))
-		is := issueStateFromIssue(i)
-		for _, ie := range issueEventsFromIssue(i) {
-			store.InsertIssueEvent(ie, is)
-		}
-		store.InsertIssueState(is)
+		store.ReplaceIssueStateAndEvents(key.(string), issueStateFromIssue(i), issueEventsFromIssue(i))
 		return nil
 	})
 	defer p.Close()
@@ -93,11 +88,7 @@ func (c *Client) PerformSync(store *store.Store, poolSize int) {
 
 		store.DropAllForIssueKey(key.(string))
 		i := c.getIssue(key.(string))
-		is := issueStateFromIssue(i)
-		for _, ie := range issueEventsFromIssue(i) {
-			store.InsertIssueEvent(ie, is)
-		}
-		store.InsertIssueState(is)
+		store.ReplaceIssueStateAndEvents(key.(string), issueStateFromIssue(i), issueEventsFromIssue(i))
 		return nil
 	})
 	defer p.Close()
@@ -124,11 +115,7 @@ func (c *Client) PerformSyncForIssueKey(store *store.Store, issueKey string) {
 	log.Printf("Sync starting\n")
 
 	i := c.getIssue(issueKey)
-	is := issueStateFromIssue(i)
-	for _, ie := range issueEventsFromIssue(i) {
-		store.InsertIssueEvent(ie, is)
-	}
-	store.InsertIssueState(is)
+	store.ReplaceIssueStateAndEvents(issueKey, issueStateFromIssue(i), issueEventsFromIssue(i))
 
 	log.Printf("Sync done in %f minutes\n", time.Since(beforeSync).Minutes())
 }
