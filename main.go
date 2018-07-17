@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/rchampourlier/agilizer-source-jira/jira"
+	"github.com/rchampourlier/agilizer-source-jira/jira/client"
 	"github.com/rchampourlier/agilizer-source-jira/store"
 )
 
@@ -53,7 +54,7 @@ func main() {
 
 	db := openDB()
 	defer db.Close()
-	store := store.NewStore(db)
+	store := store.NewPGStore(db)
 
 	switch os.Args[1] {
 
@@ -62,24 +63,27 @@ func main() {
 		store.CreateTables()
 
 	case "sync":
-		jira.NewClient().PerformIncrementalSync(store, poolSize)
+		c := client.NewAPIClient()
+		jira.PerformIncrementalSync(c, store, poolSize)
 
 	case "sync-full":
 		store.DropTables()
 		store.CreateTables()
-		jira.NewClient().PerformSync(store, poolSize)
+		c := client.NewAPIClient()
+		jira.PerformSync(c, store, poolSize)
 
 	case "sync-issue":
 		if len(os.Args) < 3 {
 			usage()
 		}
-		jira.NewClient().PerformSyncForIssueKey(store, os.Args[2])
+		c := client.NewAPIClient()
+		jira.PerformSyncForIssueKey(c, store, os.Args[2])
 
 	case "explore-custom-fields":
 		if len(os.Args) < 3 {
 			usage()
 		}
-		jira.NewClient().ExploreCustomFields(os.Args[2])
+		client.NewAPIClient().ExploreCustomFields(os.Args[2])
 
 	case "cleanup":
 		store.DropTables()
@@ -97,6 +101,7 @@ Available actions:
   - sync
   - sync-full
   - sync-issue <issue-key>
+  - issue-to-xml <issue-key>
   - explore-custom-fields <issue-key>
   - cleanup
 `)

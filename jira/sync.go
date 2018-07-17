@@ -22,7 +22,7 @@ import (
 // - For each updated issue, the records already in the store are
 //   dropped (e.g. the issue's state and events) so they can be
 //   recreated.
-func (c *Client) PerformIncrementalSync(store *store.Store, poolSize int) {
+func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 
@@ -35,9 +35,10 @@ func (c *Client) PerformIncrementalSync(store *store.Store, poolSize int) {
 
 	// Initialize a pool of workers to fetch issues
 	p := tunny.NewFunc(poolSize, func(key interface{}) interface{} {
+		log.Printf("Take pool work for issue key %v\n", key)
 		defer wg.Done()
 
-		i := c.getIssue(key.(string))
+		i := c.GetIssue(key.(string))
 		store.ReplaceIssueStateAndEvents(key.(string), issueStateFromIssue(i), issueEventsFromIssue(i))
 		return nil
 	})
@@ -45,6 +46,7 @@ func (c *Client) PerformIncrementalSync(store *store.Store, poolSize int) {
 
 	go func() {
 		for issueKey := range issueKeys {
+			log.Printf("Add pool work for issue key %s\n", issueKey)
 			wg.Add(1)
 			go p.Process(issueKey)
 		}
@@ -57,7 +59,7 @@ func (c *Client) PerformIncrementalSync(store *store.Store, poolSize int) {
 		maxUpdatedAt.Day(),
 		maxUpdatedAt.Hour(),
 		maxUpdatedAt.Minute())
-	c.searchIssues(q, issueKeys)
+	c.SearchIssues(q, issueKeys)
 
 	// Wait until all fetches are done
 	wg.Wait()
@@ -71,7 +73,7 @@ func (c *Client) PerformIncrementalSync(store *store.Store, poolSize int) {
 //
 // Each fetched issue is then processed to generate `IssueState` and
 // `IssueEvent` records that are stored in the application's store.
-func (c *Client) PerformSync(store *store.Store, poolSize int) {
+func PerformSync(c Client, store store.Store, poolSize int) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 
@@ -86,8 +88,7 @@ func (c *Client) PerformSync(store *store.Store, poolSize int) {
 	p := tunny.NewFunc(poolSize, func(key interface{}) interface{} {
 		defer wg.Done()
 
-		store.DropAllForIssueKey(key.(string))
-		i := c.getIssue(key.(string))
+		i := c.GetIssue(key.(string))
 		store.ReplaceIssueStateAndEvents(key.(string), issueStateFromIssue(i), issueEventsFromIssue(i))
 		return nil
 	})
@@ -100,7 +101,7 @@ func (c *Client) PerformSync(store *store.Store, poolSize int) {
 		}
 	}()
 
-	c.searchIssues("order by created ASC", issueKeys)
+	c.SearchIssues("order by created ASC", issueKeys)
 
 	// Wait until all fetches are done
 	wg.Wait()
@@ -110,11 +111,11 @@ func (c *Client) PerformSync(store *store.Store, poolSize int) {
 
 // PerformSyncForIssueKey is the same as `PerformSync` but for a single
 // issue specified by its key.
-func (c *Client) PerformSyncForIssueKey(store *store.Store, issueKey string) {
+func PerformSyncForIssueKey(c Client, store store.Store, issueKey string) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 
-	i := c.getIssue(issueKey)
+	i := c.GetIssue(issueKey)
 	store.ReplaceIssueStateAndEvents(issueKey, issueStateFromIssue(i), issueEventsFromIssue(i))
 
 	log.Printf("Sync done in %f minutes\n", time.Since(beforeSync).Minutes())

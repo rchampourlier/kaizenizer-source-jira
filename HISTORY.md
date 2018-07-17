@@ -1,5 +1,22 @@
 # History
 
+## 2018-07-17
+
+Continuing to implement unit tests. Facing an issue for `sync_test.go`, because the tests seem to stop executing before the goroutines have all been executed.
+
+- Created mocks for new interfaces `jira.Client` and `store.Store`
+- Extracted shared code for store to `store/store.go`
+- Renamed `store.Store` to `store.PGStore` to clarify its a Postgres backend
+
+## 2018-07-15
+
+**Adding unit tests**
+
+Also performed some modifications to the structure of the code to make it more testable. For example:
+
+- Refactored `store` to perform the deletion of previous records and insertion of new records for a given issue in a single operation, wrapped in a transaction. This simplifies the tests while making the operation more robust.
+- Extracted `jira.Client` to a specific `jira/client` package, adding an interface in `jira/client.go` to enable the addition of a `MockClient` to test the synchronization code easily.
+
 ## 2018-07-14
 
 - [x] Handle incremental synchronization to enable the synchronization to be performed regularly (e.g. every 10 minutes).
