@@ -2,6 +2,8 @@ package client
 
 import (
 	"fmt"
+	"log"
+	"sync"
 	"testing"
 
 	"github.com/andygrunwald/go-jira"
@@ -12,6 +14,7 @@ import (
 type MockClient struct {
 	*testing.T
 	expectations []Expectation
+	mutex        sync.Mutex
 }
 
 // Expectation is a specific interface for structs representing
@@ -25,7 +28,10 @@ type Expectation interface {
 // NewMockClient returns a new `MockClient` with a default
 // behaviour.
 func NewMockClient(t *testing.T) *MockClient {
-	return &MockClient{T: t}
+	return &MockClient{
+		T:     t,
+		mutex: sync.Mutex{},
+	}
 }
 
 // SearchIssues fakes a search issues query to the Jira API.
@@ -53,14 +59,15 @@ func (c *MockClient) SearchIssues(query string, issueKeys chan string) {
 func (c *MockClient) GetIssue(issueKey string) *jira.Issue {
 	e := c.popExpectation()
 	if e == nil {
-		c.Errorf("mock received `GetIssue` but no expectation was set")
-		return nil
+		msg := "mock received `GetIssue` but no expectation was set"
+		log.Fatalln(msg)
 	}
 	ee, ok := e.(*ExpectedGetIssue)
 	if !ok {
-		c.Errorf("mock received `GetIssue` but was expecting `%s`\n", e.Describe())
-		return nil
+		msg := fmt.Sprintf("mock received `GetIssue` but was expecting `%s`", e.Describe())
+		log.Fatalln(msg)
 	}
+	// Check `issueKey` matches `e.issueKey`
 	return ee.issue
 }
 
@@ -112,12 +119,9 @@ type ExpectedGetIssue struct {
 // ExpectGetIssue indicates the mock is expected to receive a
 // `GetIssue` call with the specified issue key
 func (c *MockClient) ExpectGetIssue(issueKey string) *ExpectedGetIssue {
-	return &ExpectedGetIssue{issueKey: issueKey}
-}
-
-// Describe describes the `GetIssue` expectation
-func (e *ExpectedGetIssue) Describe() string {
-	return fmt.Sprintf("ExpectedGetIssue with key `%s`", e.issueKey)
+	e := ExpectedGetIssue{issueKey: issueKey}
+	c.expectations = append(c.expectations, &e)
+	return &e
 }
 
 // WillRespondWithIssue specified that the `ExpectedGetIssue`
@@ -126,14 +130,21 @@ func (e *ExpectedGetIssue) WillRespondWithIssue(issue *jira.Issue) {
 	e.issue = issue
 }
 
+// Describe describes the `GetIssue` expectation
+func (e *ExpectedGetIssue) Describe() string {
+	return fmt.Sprintf("ExpectedGetIssue with key `%s`", e.issueKey)
+}
+
 // Other
 // -----
 
 func (c *MockClient) popExpectation() Expectation {
+	c.mutex.Lock()
 	if len(c.expectations) == 0 {
 		return nil
 	}
 	e := c.expectations[0]
 	c.expectations = c.expectations[1:]
+	c.mutex.Unlock()
 	return e
 }

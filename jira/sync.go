@@ -37,7 +37,6 @@ func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
 	// The pool's function fetch the issue specified by `key` and processes
 	// it.
 	p := tunny.NewFunc(poolSize, func(key interface{}) interface{} {
-		log.Printf("Take pool work for issue key %v\n", key)
 		defer wg.Done()
 
 		i := c.GetIssue(key.(string))
@@ -50,7 +49,6 @@ func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
 	// chan and run a pool job for each of them.
 	go func() {
 		for issueKey := range issueKeys {
-			log.Printf("Add pool work for issue key %s\n", issueKey)
 			wg.Add(1)
 			go p.Process(issueKey)
 		}

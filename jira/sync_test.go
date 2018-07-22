@@ -30,12 +30,12 @@ func TestPerformIncrementalSync(t *testing.T) {
 		i, is, ies := mockIssue(ik, refTime)
 
 		// perform a get issue
-		c.ExpectGetIssue(ik).
-			WillRespondWithIssue(i)
+		c.ExpectGetIssue(ik).WillRespondWithIssue(i)
 
 		// replace previous records of the issue with new
 		//   state and events records
 		s.ExpectReplaceIssueStateAndEvents().
+			WithIssueKey(ik).
 			WithIssueState(is).
 			WithIssueEvents(ies).
 			WillReturnError(nil)
@@ -48,12 +48,14 @@ func mockIssue(issueKey string, refTime time.Time) (*extJira.Issue, *store.Issue
 	issueFields := extJira.IssueFields{
 		Type:           extJira.IssueType{Name: "Bug"},
 		Project:        extJira.Project{Key: "PJ", Name: "Project"},
+		Status:         &extJira.Status{Name: "In Review"},
 		Resolutiondate: extJira.Time(refTime),
 		Created:        extJira.Time(refTime),
 		Duedate:        extJira.Date(refTime),
 		Updated:        extJira.Time(refTime),
-		Description:    "description",
+		Priority:       &extJira.Priority{Name: "Major"},
 		Summary:        "summary",
+		Description:    "description",
 	}
 	changelog := extJira.Changelog{}
 	i := &extJira.Issue{
@@ -70,7 +72,18 @@ func mockIssue(issueKey string, refTime time.Time) (*extJira.Issue, *store.Issue
 		Summary:     strAddr("summary"),
 		Description: strAddr("description"),
 	}
-	ies := []*store.IssueEvent{}
+	ies := []*store.IssueEvent{
+		&store.IssueEvent{
+			EventTime:   refTime,
+			EventKind:   "created",
+			EventAuthor: "N/A",
+			// "N/A" because the issue's reporter is not set, so the required string is replaced by N/A
+			IssueKey:         issueKey,
+			CommentBody:      nil,
+			StatusChangeFrom: nil,
+			StatusChangeTo:   nil,
+		},
+	}
 	return i, is, ies
 }
 
