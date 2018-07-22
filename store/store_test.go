@@ -9,13 +9,13 @@ import (
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 )
 
-func TestReplaceIssueStateAndEvents(t *testing.T) {
+func TestPGStore_ReplaceIssueStateAndEvents(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer db.Close()
-	s := store.NewStore(db)
+	s := store.NewPGStore(db)
 
 	// expect transaction begin
 	mock.ExpectBegin()
@@ -95,14 +95,14 @@ func TestReplaceIssueStateAndEvents(t *testing.T) {
 	}
 }
 
-func TestGetMaxUpdatedAt(t *testing.T) {
+func TestPGStore_GetMaxUpdatedAt(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer db.Close()
 
-	s := store.NewStore(db)
+	s := store.NewPGStore(db)
 
 	timeV := time.Now()
 	rows := sqlmock.NewRows([]string{"max"}).
@@ -117,7 +117,7 @@ func TestGetMaxUpdatedAt(t *testing.T) {
 	}
 }
 
-func TestCreateTables(t *testing.T) {
+func TestPGStore_CreateTables(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -129,11 +129,11 @@ func TestCreateTables(t *testing.T) {
 	mock.ExpectExec("CREATE TABLE \"jira_issues_events\"").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	s := store.NewStore(db)
+	s := store.NewPGStore(db)
 	s.CreateTables()
 }
 
-func TestDrop(t *testing.T) {
+func TestPGStore_Drop(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -145,7 +145,7 @@ func TestDrop(t *testing.T) {
 	mock.ExpectExec("DROP TABLE IF EXISTS \"jira_issues_events\"").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	s := store.NewStore(db)
+	s := store.NewPGStore(db)
 	s.DropTables()
 }
 

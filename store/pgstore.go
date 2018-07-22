@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // PG engine for database/sql
 )
 
 // PGStore implements the application's `Store` with a
