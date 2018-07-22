@@ -33,7 +33,9 @@ func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
 	// until all are done (even if all searches have been done)
 	var wg sync.WaitGroup
 
-	// Initialize a pool of workers to fetch issues
+	// Initialize a pool of workers to fetch and process issues.
+	// The pool's function fetch the issue specified by `key` and processes
+	// it.
 	p := tunny.NewFunc(poolSize, func(key interface{}) interface{} {
 		log.Printf("Take pool work for issue key %v\n", key)
 		defer wg.Done()
@@ -44,14 +46,18 @@ func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
 	})
 	defer p.Close()
 
+	// Start a routine to retrieve fetched issue keys from the `issueKeys`
+	// chan and run a pool job for each of them.
 	go func() {
 		for issueKey := range issueKeys {
 			log.Printf("Add pool work for issue key %s\n", issueKey)
 			wg.Add(1)
 			go p.Process(issueKey)
 		}
+		wg.Done() // Done when all `issueKeys` have been sent for processing
 	}()
 
+	// Search issues (fetch issue keys)
 	maxUpdatedAt := store.GetMaxUpdatedAt()
 	q := fmt.Sprintf("updated > '%d/%d/%d %d:%d' ORDER BY created ASC",
 		maxUpdatedAt.Year(),
@@ -60,6 +66,7 @@ func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
 		maxUpdatedAt.Hour(),
 		maxUpdatedAt.Minute())
 	c.SearchIssues(q, issueKeys)
+	wg.Add(1) // Adding a job to wait for the processing of `issueKeys`
 
 	// Wait until all fetches are done
 	wg.Wait()
