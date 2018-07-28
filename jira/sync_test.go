@@ -73,7 +73,7 @@ func mockIssue(issueKey string, refTime time.Time) (*extJira.Issue, *store.Issue
 		Description: strAddr("description"),
 	}
 	ies := []*store.IssueEvent{
-		&store.IssueEvent{
+		{
 			EventTime:   refTime,
 			EventKind:   "created",
 			EventAuthor: "N/A",
