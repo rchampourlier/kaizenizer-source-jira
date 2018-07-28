@@ -4,6 +4,11 @@ go:
   - "1.10.x"
   - master
 
+install:
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
+  - go get -t ./...
+
 script:
   - /usr/bin/env bash ./go.test.sh
 
