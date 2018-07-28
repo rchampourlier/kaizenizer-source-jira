@@ -55,19 +55,13 @@ func (c *MockClient) SearchIssues(query string, issueKeys chan string) {
 }
 
 // GetIssue fakes fetching the issue specified by its key.
-// It returns a fake `jira.Issue`.
+// To have it return a `jira.Issue`, use `WillRespondWithIssue(..)`.
 func (c *MockClient) GetIssue(issueKey string) *jira.Issue {
-	e := c.popExpectation()
-	if e == nil {
-		msg := "mock received `GetIssue` but no expectation was set"
+	ee := c.popExpectedGetIssue(issueKey)
+	if ee == nil {
+		msg := fmt.Sprintf("mock received `GetIssue` with issue key `%s` but no matching expectation could be found", issueKey)
 		log.Fatalln(msg)
 	}
-	ee, ok := e.(*ExpectedGetIssue)
-	if !ok {
-		msg := fmt.Sprintf("mock received `GetIssue` but was expecting `%s`", e.Describe())
-		log.Fatalln(msg)
-	}
-	// Check `issueKey` matches `e.issueKey`
 	return ee.issue
 }
 
@@ -140,11 +134,35 @@ func (e *ExpectedGetIssue) Describe() string {
 
 func (c *MockClient) popExpectation() Expectation {
 	c.mutex.Lock()
+	defer c.mutex.Unlock()
 	if len(c.expectations) == 0 {
 		return nil
 	}
 	e := c.expectations[0]
 	c.expectations = c.expectations[1:]
-	c.mutex.Unlock()
 	return e
+}
+
+func (c *MockClient) popExpectedGetIssue(issueKey string) *ExpectedGetIssue {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if len(c.expectations) == 0 {
+		return nil
+	}
+	for i, e := range c.expectations {
+		if ee, ok := e.(*ExpectedGetIssue); ok {
+			if ee.issueKey == issueKey {
+				if i == 0 {
+					c.expectations = c.expectations[1:]
+				} else if i == len(c.expectations)-1 {
+					c.expectations = c.expectations[0:i]
+				} else {
+					c.expectations = append(c.expectations[0:i], c.expectations[i+1:]...)
+				}
+				return ee
+			}
+		}
+	}
+	fmt.Printf("popExpIssue %s -- DONE\n", issueKey)
+	return nil
 }
