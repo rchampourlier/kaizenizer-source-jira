@@ -10,22 +10,15 @@ The goal of this project is to enable teams using Jira to perform analyses on Ji
 
 ## Use cases
 
-### Operational
+Some examples of easy requests that can be done using Metabase.
 
-- Monitor (using a dashboard, for example in Metabase), issues with an high number of comments (e.g. > 3) and lasting more than the average cycle time.
-- Monitor (using a dashboard) delivery-related KPIs, e.g.:
-  - Number of issues created
-  - Number of issues of type "Bug" created
-  - Number of issues solved
-- Send an alert when an issue is not done and has not been updated in the last 2 weeks.
-- Send an alert when an issue has been sent back from review to development more than once.
+### Identify issues with many comments
 
-### Team analytics
+![](doc/metabase-example-issues-with-many-comments.png)
 
-- Calculate team KPIs over all Jira projects, for example:
-  - Mean Time Between Incidents (e.g. Blocker Bugs)
-  - Cycle Time
-  - Average number of issues solved per week 
+### Track number of bugs created over time
+
+![](doc/metabase-example-created-bugs-per-priority-over-time.png)
 
 ## How it works
 
@@ -44,14 +37,54 @@ The tool will perform a request to only retrieve the issues modified since the l
 
 ### How to use
 
+#### 1. Create your `.env` file
+
+```
+cp .env.example .env
+```
+
+Now, edit the file and set the following values:
+
+- `JIRA_USERNAME`: a valid Jira username (you should probably have a dedicated user for this and not use your personal user)
+- `JIRA_PASSWORD`: the corresponding password
+- `DB_URL`: the URL to the database where you want to push Jira records to (it should look like this: `postgres://USER:PASSWORD@HOST:5432/DB_NAME`)
+
+#### 2. Run the synchronization
+
 ```
 source .env
 go run *.go sync
 ```
 
-## Status
+### How to change the generated state and event records
 
-The project is currently in early stage of development (POC phase). As such, it is not usable yet and the code quality standards (e.g. testing) will not be respected yet.
+#### Add a new field to the _Jira Issue States_
+
+1. In `store/pgstore.go`:
+  - In `CreateTables(..)`, add the column for the new field to the `jira_issues_states` table.
+  - In `insertIssueState(..)`, add the new value in the `INSERT`.
+2. In `store/store.go`:
+  - Change the `IssueState struct` to add the new field.
+3. [Optional] If you want to add the field to the tests (necessary if the field is mandatory or you do some operation - e.g. mapping or conversion), in `store/mockstore.go`:
+  - Update `ReplaceIssueStateAndEvents(..)` to check the value for the new field.
+4. In `jira/mapping.go`:
+  - Change `issueStateFromIssue(..)` to generate the correct `store.IssueState` for your issue, adding the new field. (This is where you will do the mapping with custom fields.)
+
+NB: you can use the `explore-custom-fields` action on the command line to get custom fields mappings.
+
+#### Generate new kinds of _Jira Issue Events_
+
+For now, the following events are generated from the issue's data:
+
+- `created`
+- `comment_added`
+- `status_changed`
+
+If you want to add new kinds of events:
+
+1. In `jira/mapping.go`:
+  - Edit `issueEventsFromIssue(..)` to generate your new events for each issue processed. You can see how the existing events are generated.
+2. [Optional] If you need to change the _Jira Issue Events_ structure to add columns related to your new events, you can follow the instructions for _Jira Issue States_ above, there is not much difference (unless you should look for event-related functions!).
 
 ## Contribution
 
