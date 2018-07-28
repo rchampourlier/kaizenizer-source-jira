@@ -1,5 +1,12 @@
 # History
 
+## 2018-07-28
+
+- Finished with unit tests.
+- Added configuration to the repository to run tests using TravisCI and check coverage with Coveralls.
+- Repository configured on Github to display badges and do some CI on pull request changes.
+- Adding some documentation to help with usage and changes.
+
 ## 2018-07-17
 
 Continuing to implement unit tests. Facing an issue for `sync_test.go`, because the tests seem to stop executing before the goroutines have all been executed.
