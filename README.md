@@ -2,6 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/rchampourlier/agilizer-source-jira)](https://goreportcard.com/report/github.com/rchampourlier/agilizer-source-jira)
 [![Build Status](https://travis-ci.com/rchampourlier/agilizer-source-jira.svg?branch=master)](https://travis-ci.com/rchampourlier/agilizer-source-jira)
+[![Coverage Status](https://coveralls.io/repos/github/rchampourlier/agilizer-source-jira/badge.svg)](https://coveralls.io/github/rchampourlier/agilizer-source-jira)
 
 ## Objective
 

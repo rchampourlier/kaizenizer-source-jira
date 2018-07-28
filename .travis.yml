@@ -1,6 +1,16 @@
 language: go
 
 go:
-  - "1.x"
   - "1.10.x"
   - master
+
+install:
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
+  - go get -t ./...
+
+script:
+  - /usr/bin/env bash ./go.test.sh
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
