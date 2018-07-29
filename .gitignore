@@ -1,3 +1,4 @@
+/.docker_build
 /.env
 /.env.prod
 /coverage.out
