@@ -1,5 +1,11 @@
 # History
 
+## 2018-07-29
+
+- Enabled deployment to Heroku. Added `dep` as dependency manager. Abandoned deployment to Heroku because it doesn't seem usable from the Scheduler plugin that is needed to schedule task executions.
+- Kept the Heroku's build stack to generate the Docker image for now. Will use this to try deploying to AWS ECS or Fargate. Achieved deploying the container image to AWS ECR, but going further is a pain in the $#!. Seems like scheduling will not be easy either, and Fargate, well... could not really find where Fargate was.
+- Trying GCP AppEngine now. I will finally switch to Serverless if I can't have this easy setup to work without deploying my own Docker server. Well, after some time trying, it may not be simpler here. Abandoning deployment for now, will use our Kubernetes cluster instead, since it may be the easiest solution.
+
 ## 2018-07-28
 
 - Finished with unit tests.
