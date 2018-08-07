@@ -42,11 +42,13 @@ type IssueState struct {
 // IssueEvent represents a change event on an issue to be stored
 // in the DB.
 type IssueEvent struct {
-	EventTime        time.Time
-	EventKind        string
-	EventAuthor      string
-	IssueKey         string
-	CommentBody      *string
-	StatusChangeFrom *string
-	StatusChangeTo   *string
+	EventTime          time.Time
+	EventKind          string
+	EventAuthor        string
+	IssueKey           string
+	CommentBody        *string
+	StatusChangeFrom   *string
+	StatusChangeTo     *string
+	AssigneeChangeFrom *string
+	AssigneeChangeTo   *string
 }

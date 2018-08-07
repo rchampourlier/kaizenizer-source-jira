@@ -112,6 +112,20 @@ func (m *MockStore) ReplaceIssueStateAndEvents(ik string, is IssueState, ies []I
 				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].StatusChangeTo=`%v` but was expecting `%v`\n", i, *ie.StatusChangeTo, *eie.StatusChangeTo)
 			}
 		}
+		if eie.AssigneeChangeFrom != nil {
+			if ie.AssigneeChangeFrom == nil {
+				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].AssigneeChangeFrom=nil but was expecting `%v`\n", i, *eie.AssigneeChangeFrom)
+			} else if *ie.AssigneeChangeFrom != *eie.AssigneeChangeFrom {
+				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].AssigneeChangeFrom=`%v` but was expecting `%v`\n", i, *ie.AssigneeChangeFrom, *eie.AssigneeChangeFrom)
+			}
+		}
+		if eie.AssigneeChangeTo != nil {
+			if ie.AssigneeChangeTo == nil {
+				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].AssigneeChangeTo=nil but was expecting `%v`\n", i, *eie.AssigneeChangeTo)
+			} else if *ie.AssigneeChangeTo != *eie.AssigneeChangeTo {
+				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].AssigneeChangeTo=`%v` but was expecting `%v`\n", i, *ie.AssigneeChangeTo, *eie.AssigneeChangeTo)
+			}
+		}
 	}
 
 	return ee.err
