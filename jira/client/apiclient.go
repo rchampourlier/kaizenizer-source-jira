@@ -71,6 +71,24 @@ func (c *APIClient) GetIssue(issueKey string) *jira.Issue {
 	return i
 }
 
+// ExploreRawIssue prints the raw data fetched from Jira.
+// This can be used to get the structure of an issue to
+// implement new features.
+func (c *APIClient) ExploreRawIssue(issueKey string) {
+	i := NewAPIClient().GetIssue(issueKey)
+	fmt.Printf("issue: %v\n", i)
+	fmt.Println("---")
+	fmt.Printf("fields: %v\n", i.Fields)
+	fmt.Println("---")
+	if i.Changelog != nil {
+		fmt.Printf("changelog histories:\n")
+		for _, h := range i.Changelog.Histories {
+			fmt.Printf("  - %v\n", h)
+		}
+		fmt.Println("---")
+	}
+}
+
 // ExploreCustomFields prints information about custom fields
 // by fetching the specified issue. This can be used to
 // retrieve the custom fields IDs by fetching an issue with

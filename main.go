@@ -36,6 +36,10 @@ const MaxOpenConns = 5 // for Heroku Postgres
 //
 // Synchronizes only the issue specified by the passed key.
 //
+// ### explore-raw-issue
+//
+// Displays the raw issue as fetched from Jira.
+//
 // ### explore-custom-fields <issue key>
 //
 // Displays custom field information for the issue specified by the
@@ -73,6 +77,12 @@ func main() {
 		c := client.NewAPIClient()
 		jira.PerformSyncForIssueKey(c, store, os.Args[2])
 
+	case "explore-raw-issue":
+		if len(os.Args) < 3 {
+			usage()
+		}
+		client.NewAPIClient().ExploreRawIssue(os.Args[2])
+
 	case "explore-custom-fields":
 		if len(os.Args) < 3 {
 			usage()
@@ -91,11 +101,11 @@ func usage() {
 	fmt.Printf(`Usage: go run main.go <action>
 
 Available actions:
-  - init
+  - reset
   - sync
-  - sync-full
   - sync-issue <issue-key>
   - issue-to-xml <issue-key>
+  - explore-raw-issue <issue_key>
   - explore-custom-fields <issue-key>
   - cleanup
 `)
