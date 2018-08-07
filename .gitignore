@@ -3,3 +3,5 @@
 /.env.prod
 /coverage.out
 /coverage.txt
+/k8s
+/scripts/create-secrets.sh
