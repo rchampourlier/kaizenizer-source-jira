@@ -19,20 +19,18 @@ const MaxOpenConns = 5 // for Heroku Postgres
 
 // Main program
 //
-// ### init
+// ### reset
 //
 // Initializes the connected database. Drops the existing tables if
-// exist and create new ones according to the necessary schema.
+// exist and create new ones according to the necessary schema. It
+// then performs a full sync.
 //
 // ### sync
 //
 // Performs an incremental sync, only fetching issues updated after
 // the maximum `updated_at` of issues already stored in the application.
 //
-// ### sync-full
-//
-// This fetches all issues from the Jira instance and generates both states
-// and events to the application's store.
+// NB: the incremental sync will fail if started from an empty database.
 //
 // ### sync-issue <issue key>
 //
@@ -58,19 +56,15 @@ func main() {
 
 	switch os.Args[1] {
 
-	case "init":
-		store.DropTables()
-		store.CreateTables()
-
-	case "sync":
-		c := client.NewAPIClient()
-		jira.PerformIncrementalSync(c, store, poolSize)
-
-	case "sync-full":
+	case "reset":
 		store.DropTables()
 		store.CreateTables()
 		c := client.NewAPIClient()
 		jira.PerformSync(c, store, poolSize)
+
+	case "sync":
+		c := client.NewAPIClient()
+		jira.PerformIncrementalSync(c, store, poolSize)
 
 	case "sync-issue":
 		if len(os.Args) < 3 {
