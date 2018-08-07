@@ -1,5 +1,14 @@
 # History
 
+## 2018-08-08
+
+- Adding `assignee_changed` events
+- Minor bug fix (use `reset` instead of `init` now)
+
+## 2018-08-03
+
+- Deployed on JobTeaser's Kubernetes development cluster. Took me less than 2 hours, from scratch. With the help of Gearnode :) Yey!
+
 ## 2018-07-29
 
 - Enabled deployment to Heroku. Added `dep` as dependency manager. Abandoned deployment to Heroku because it doesn't seem usable from the Scheduler plugin that is needed to schedule task executions.

@@ -73,61 +73,61 @@ func (m *MockStore) ReplaceIssueStateAndEvents(ik string, is IssueState, ies []I
 
 	// Check count of events
 	if len(ies) != len(ee.issueEvents) {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with %d events but was expecting %d\n", len(ies), len(ee.issueEvents))
-	}
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with %d events but was expecting %d (%v)\n", len(ies), len(ee.issueEvents), ies)
+	} else {
 
-	// Check events
-	for i, ie := range ies {
-		eie := ee.issueEvents[i]
-		if ie.EventTime != eie.EventTime {
-			m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].EventTime=`%v` but was expecting `%v`\n", i, ie.EventTime, eie.EventTime)
-		}
-		if ie.EventKind != eie.EventKind {
-			m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].EventKind=`%v` but was expecting `%v`\n", i, ie.EventKind, eie.EventKind)
-		}
-		if ie.EventAuthor != eie.EventAuthor {
-			m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].EventAuthor=`%v` but was expecting `%v`\n", i, ie.EventAuthor, eie.EventAuthor)
-		}
-		if ie.IssueKey != eie.IssueKey {
-			m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].IssueKey=`%v` but was expecting `%v`\n", i, ie.IssueKey, eie.IssueKey)
-		}
-		if eie.CommentBody != nil {
-			if ie.CommentBody == nil {
-				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].CommentBody=nil but was expecting `%v`\n", i, *eie.CommentBody)
-			} else if *ie.CommentBody != *eie.CommentBody {
-				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].CommentBody=`%v` but was expecting `%v`\n", i, *ie.CommentBody, *eie.CommentBody)
+		// Check events
+		for i, ie := range ies {
+			eie := ee.issueEvents[i]
+			if !timesAlmostEqual(ie.EventTime, eie.EventTime) {
+				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].EventTime=`%v` but was expecting `%v`\n", i, ie.EventTime, eie.EventTime)
 			}
-		}
-		if eie.StatusChangeFrom != nil {
-			if ie.StatusChangeFrom == nil {
-				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].StatusChangeFrom=nil but was expecting `%v`\n", i, *eie.StatusChangeFrom)
-			} else if *ie.StatusChangeFrom != *eie.StatusChangeFrom {
-				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].StatusChangeFrom=`%v` but was expecting `%v`\n", i, *ie.StatusChangeFrom, *eie.StatusChangeFrom)
+			if ie.EventKind != eie.EventKind {
+				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].EventKind=`%v` but was expecting `%v`\n", i, ie.EventKind, eie.EventKind)
 			}
-		}
-		if eie.StatusChangeTo != nil {
-			if ie.StatusChangeTo == nil {
-				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].StatusChangeTo=nil but was expecting `%v`\n", i, *eie.StatusChangeTo)
-			} else if *ie.StatusChangeTo != *eie.StatusChangeTo {
-				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].StatusChangeTo=`%v` but was expecting `%v`\n", i, *ie.StatusChangeTo, *eie.StatusChangeTo)
+			if ie.EventAuthor != eie.EventAuthor {
+				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].EventAuthor=`%v` but was expecting `%v`\n", i, ie.EventAuthor, eie.EventAuthor)
 			}
-		}
-		if eie.AssigneeChangeFrom != nil {
-			if ie.AssigneeChangeFrom == nil {
-				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].AssigneeChangeFrom=nil but was expecting `%v`\n", i, *eie.AssigneeChangeFrom)
-			} else if *ie.AssigneeChangeFrom != *eie.AssigneeChangeFrom {
-				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].AssigneeChangeFrom=`%v` but was expecting `%v`\n", i, *ie.AssigneeChangeFrom, *eie.AssigneeChangeFrom)
+			if ie.IssueKey != eie.IssueKey {
+				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].IssueKey=`%v` but was expecting `%v`\n", i, ie.IssueKey, eie.IssueKey)
 			}
-		}
-		if eie.AssigneeChangeTo != nil {
-			if ie.AssigneeChangeTo == nil {
-				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].AssigneeChangeTo=nil but was expecting `%v`\n", i, *eie.AssigneeChangeTo)
-			} else if *ie.AssigneeChangeTo != *eie.AssigneeChangeTo {
-				m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].AssigneeChangeTo=`%v` but was expecting `%v`\n", i, *ie.AssigneeChangeTo, *eie.AssigneeChangeTo)
+			if eie.CommentBody != nil {
+				if ie.CommentBody == nil {
+					m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].CommentBody=nil but was expecting `%v`\n", i, *eie.CommentBody)
+				} else if *ie.CommentBody != *eie.CommentBody {
+					m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].CommentBody=`%v` but was expecting `%v`\n", i, *ie.CommentBody, *eie.CommentBody)
+				}
+			}
+			if eie.StatusChangeFrom != nil {
+				if ie.StatusChangeFrom == nil {
+					m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].StatusChangeFrom=nil but was expecting `%v`\n", i, *eie.StatusChangeFrom)
+				} else if *ie.StatusChangeFrom != *eie.StatusChangeFrom {
+					m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].StatusChangeFrom=`%v` but was expecting `%v`\n", i, *ie.StatusChangeFrom, *eie.StatusChangeFrom)
+				}
+			}
+			if eie.StatusChangeTo != nil {
+				if ie.StatusChangeTo == nil {
+					m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].StatusChangeTo=nil but was expecting `%v`\n", i, *eie.StatusChangeTo)
+				} else if *ie.StatusChangeTo != *eie.StatusChangeTo {
+					m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].StatusChangeTo=`%v` but was expecting `%v`\n", i, *ie.StatusChangeTo, *eie.StatusChangeTo)
+				}
+			}
+			if eie.AssigneeChangeFrom != nil {
+				if ie.AssigneeChangeFrom == nil {
+					m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].AssigneeChangeFrom=nil but was expecting `%v`\n", i, *eie.AssigneeChangeFrom)
+				} else if *ie.AssigneeChangeFrom != *eie.AssigneeChangeFrom {
+					m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].AssigneeChangeFrom=`%v` but was expecting `%v`\n", i, *ie.AssigneeChangeFrom, *eie.AssigneeChangeFrom)
+				}
+			}
+			if eie.AssigneeChangeTo != nil {
+				if ie.AssigneeChangeTo == nil {
+					m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].AssigneeChangeTo=nil but was expecting `%v`\n", i, *eie.AssigneeChangeTo)
+				} else if *ie.AssigneeChangeTo != *eie.AssigneeChangeTo {
+					m.Errorf("mock received `ReplaceIssueStateAndEvents` with event[%d].AssigneeChangeTo=`%v` but was expecting `%v`\n", i, *ie.AssigneeChangeTo, *eie.AssigneeChangeTo)
+				}
 			}
 		}
 	}
-
 	return ee.err
 }
 
@@ -294,4 +294,8 @@ func (m *MockStore) popExpectedReplaceIssueStateAndEventsForIssueKey(ik string) 
 	}
 
 	return nil
+}
+
+func timesAlmostEqual(t1 time.Time, t2 time.Time) bool {
+	return t1.Sub(t2) < time.Millisecond
 }
