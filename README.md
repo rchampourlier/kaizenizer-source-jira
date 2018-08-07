@@ -37,6 +37,14 @@ The tool will perform a request to only retrieve the issues modified since the l
 
 ### How to use
 
+#### 0. Clone the repo
+
+```
+go get github.com/rchampourlier/agilizer-source-jira
+```
+
+NB: you should follow Go conventions (e.g. `GOPATH`, dependencies management, etc.) or at least have your environment working and know it well enough.
+
 #### 1. Create your `.env` file
 
 ```
@@ -49,12 +57,23 @@ Now, edit the file and set the following values:
 - `JIRA_PASSWORD`: the corresponding password
 - `DB_URL`: the URL to the database where you want to push Jira records to (it should look like this: `postgres://USER:PASSWORD@HOST:5432/DB_NAME`)
 
-#### 2. Run the synchronization
+NB: if you face Postgres SSL-related issues, try adding `?sslmode=disable` at the end of your `DB_URL`.
+
+#### 2. DB initialization and initial synchronization
+
+```
+source .env
+go run *.go reset
+```
+
+#### 3. Incremental synchronization
 
 ```
 source .env
 go run *.go sync
 ```
+
+_NB: the DB must have been initialized and a first synchronization done._
 
 ### How to change the generated state and event records
 
@@ -86,6 +105,12 @@ If you want to add new kinds of events:
 1. In `jira/mapping.go`:
   - Edit `issueEventsFromIssue(..)` to generate your new events for each issue processed. You can see how the existing events are generated.
 2. [Optional] If you need to change the _Jira Issue Events_ structure to add columns related to your new events, you can follow the instructions for _Jira Issue States_ above, there is not much difference (unless you should look for event-related functions!).
+
+## Troubleshooting
+
+### SSL issues with Postgres
+
+Add `?sslmode=disable` at the end of your DB URL.
 
 ## Contribution
 
