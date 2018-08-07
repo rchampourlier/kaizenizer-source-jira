@@ -13,13 +13,15 @@ func issueEventsFromIssue(i *jira.Issue) []store.IssueEvent {
 	issueEvents := make([]store.IssueEvent, 0)
 
 	issueEvents = append(issueEvents, store.IssueEvent{
-		EventTime:        time.Time(i.Fields.Created),
-		EventKind:        "created",
-		EventAuthor:      requiredString(reporterName(i)),
-		IssueKey:         i.Key,
-		CommentBody:      nil,
-		StatusChangeFrom: nil,
-		StatusChangeTo:   nil,
+		EventTime:          time.Time(i.Fields.Created),
+		EventKind:          "created",
+		EventAuthor:        requiredString(reporterName(i)),
+		IssueKey:           i.Key,
+		CommentBody:        nil,
+		StatusChangeFrom:   nil,
+		StatusChangeTo:     nil,
+		AssigneeChangeFrom: nil,
+		AssigneeChangeTo:   nil,
 	})
 
 	if i.Fields.Comments != nil {
@@ -38,18 +40,28 @@ func issueEventsFromIssue(i *jira.Issue) []store.IssueEvent {
 	if i.Changelog != nil {
 		for _, h := range i.Changelog.Histories {
 			for _, cli := range h.Items {
-				if cli.Field != "status" {
+				switch cli.Field {
+				case "status":
+					issueEvents = append(issueEvents, store.IssueEvent{
+						EventTime:        parseTime(h.Created),
+						EventKind:        "status_changed",
+						EventAuthor:      h.Author.Name,
+						IssueKey:         i.Key,
+						StatusChangeFrom: &cli.FromString,
+						StatusChangeTo:   &cli.ToString,
+					})
+				case "assignee":
+					issueEvents = append(issueEvents, store.IssueEvent{
+						EventTime:          parseTime(h.Created),
+						EventKind:          "assignee_changed",
+						EventAuthor:        h.Author.Name,
+						IssueKey:           i.Key,
+						AssigneeChangeFrom: &cli.FromString,
+						AssigneeChangeTo:   &cli.ToString,
+					})
+				default:
 					continue
 				}
-				issueEvents = append(issueEvents, store.IssueEvent{
-					EventTime:        parseTime(h.Created),
-					EventKind:        "status_changed",
-					EventAuthor:      h.Author.Name,
-					IssueKey:         i.Key,
-					CommentBody:      nil,
-					StatusChangeFrom: &cli.FromString,
-					StatusChangeTo:   &cli.ToString,
-				})
 			}
 		}
 	}

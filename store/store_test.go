@@ -57,8 +57,10 @@ func TestPGStore_ReplaceIssueStateAndEvents(t *testing.T) {
 		"kind",
 		"author",
 		"comment",
-		"from",
-		"to",
+		"status_from",
+		"status_to",
+		"assignee_from",
+		"assignee_to",
 		"key",
 		anyTime{},
 		anyTime{},
@@ -178,13 +180,15 @@ func mockIssueState() store.IssueState {
 
 func mockIssueEvent() store.IssueEvent {
 	return store.IssueEvent{
-		EventTime:        time.Now(),
-		EventKind:        "kind",
-		EventAuthor:      "author",
-		IssueKey:         "key",
-		CommentBody:      stringAddr("comment"),
-		StatusChangeFrom: stringAddr("from"),
-		StatusChangeTo:   stringAddr("to"),
+		EventTime:          time.Now(),
+		EventKind:          "kind",
+		EventAuthor:        "author",
+		IssueKey:           "key",
+		CommentBody:        stringAddr("comment"),
+		StatusChangeFrom:   stringAddr("status_from"),
+		StatusChangeTo:     stringAddr("status_to"),
+		AssigneeChangeFrom: stringAddr("assignee_from"),
+		AssigneeChangeTo:   stringAddr("assignee_to"),
 	}
 }
 

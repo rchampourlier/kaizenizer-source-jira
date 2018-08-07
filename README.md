@@ -79,6 +79,7 @@ For now, the following events are generated from the issue's data:
 - `created`
 - `comment_added`
 - `status_changed`
+- `assignee_changed`
 
 If you want to add new kinds of events:
 

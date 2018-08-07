@@ -16,3 +16,6 @@ push:
 
 clean:
 	rm -rf $(DOCKER_BUILD)
+
+test:
+	go test -v -covermode=count -coverprofile=coverage.out ./...

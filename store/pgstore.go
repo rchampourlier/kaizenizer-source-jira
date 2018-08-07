@@ -125,7 +125,9 @@ func (s *PGStore) CreateTables() {
 			"issue_fix_versions" TEXT,
 			"comment_body" TEXT,
 			"status_change_from" TEXT,
-			"status_change_to" TEXT
+			"status_change_to" TEXT,
+			"assignee_change_from" TEXT,
+			"assignee_change_to" TEXT
 		);`,
 	}
 	err := s.exec(queries)
@@ -170,6 +172,8 @@ func insertIssueEvent(tx *sql.Tx, ie IssueEvent, is IssueState) (err error) {
 		comment_body,
 		status_change_from,
 		status_change_to,
+		assignee_change_from,
+		assignee_change_to,
 		issue_key,
 		issue_created_at,
 		issue_updated_at,
@@ -192,7 +196,7 @@ func insertIssueEvent(tx *sql.Tx, ie IssueEvent, is IssueState) (err error) {
 		issue_components,
 		issue_fix_versions
 	)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27);
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29);
 	`
 
 	_, err = tx.Exec(
@@ -203,6 +207,8 @@ func insertIssueEvent(tx *sql.Tx, ie IssueEvent, is IssueState) (err error) {
 		ie.CommentBody,
 		ie.StatusChangeFrom,
 		ie.StatusChangeTo,
+		ie.AssigneeChangeFrom,
+		ie.AssigneeChangeTo,
 		ie.IssueKey,
 		is.CreatedAt,
 		is.UpdatedAt,
