@@ -4,6 +4,7 @@
 
 - Adding `assignee_changed` events
 - Minor bug fix (use `reset` instead of `init` now)
+- Added documentation to fix missing information
 
 ## 2018-08-03
 
