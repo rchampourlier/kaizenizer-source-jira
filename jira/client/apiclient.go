@@ -60,13 +60,13 @@ func (c *APIClient) SearchIssues(query string, issueKeys chan string) {
 // API using `go-jira` and returns a `jira.Issue`.
 func (c *APIClient) GetIssue(issueKey string) *jira.Issue {
 	log.Printf("Fetching issue %s\n", issueKey)
-	i, _, err := c.Issue.Get(issueKey, &jira.GetQueryOptions{
+	i, r, err := c.Issue.Get(issueKey, &jira.GetQueryOptions{
 		Expand:       "names,schema,changelog",
 		FieldsByKeys: true,
 	})
 	if err != nil {
 		// TODO: instead of crashing, should handle the error and retry
-		log.Fatalln(fmt.Errorf("error in `getIssue`: %s", err))
+		log.Fatalln(fmt.Errorf("error in `getIssue`: %s -- response: %v", err, r))
 	}
 	return i
 }
