@@ -56,7 +56,7 @@ func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
 	}()
 
 	// Search issues (fetch issue keys)
-	restartFromUpdatedAt := store.GetMaxUpdatedAt(poolSize * 3)
+	restartFromUpdatedAt := store.GetRestartFromUpdatedAt(poolSize * 3)
 	q := fmt.Sprintf("updated > '%d/%d/%d %d:%d' ORDER BY updated ASC",
 		restartFromUpdatedAt.Year(),
 		restartFromUpdatedAt.Month(),

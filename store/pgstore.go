@@ -52,7 +52,7 @@ func (s *PGStore) ReplaceIssueStateAndEvents(k string, is IssueState, ies []Issu
 	return
 }
 
-// GetMaxUpdatedAt returns the `n`th value of `issue_updated_at` from
+// GetRestartFromUpdatedAt returns the `n`th value of `issue_updated_at` from
 // `jira_issues_states` in descending order.
 //
 // Instead of taking the maximum value, taking the `n`th one enables
@@ -61,7 +61,7 @@ func (s *PGStore) ReplaceIssueStateAndEvents(k string, is IssueState, ies []Issu
 // several goroutines, a crash or error may have processed newer issues
 // that the one it crashed for. `n` should thus be taken at least to
 // the number of goroutines fetching issues, even better a multiple.
-func (s *PGStore) GetMaxUpdatedAt(n int) *time.Time {
+func (s *PGStore) GetRestartFromUpdatedAt(n int) *time.Time {
 	var maxUpdatedAt time.Time
 	q := `
 	SELECT MIN(issue_updated_at)

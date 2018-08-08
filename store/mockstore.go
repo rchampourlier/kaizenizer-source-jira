@@ -131,27 +131,27 @@ func (m *MockStore) ReplaceIssueStateAndEvents(ik string, is IssueState, ies []I
 	return ee.err
 }
 
-// GetMaxUpdatedAt returns the value specified with the
+// GetRestartFromUpdatedAt returns the value specified with the
 // expectation.
 //
-// To position an expectation, use `ExpectGetMaxUpdatedAt(..)`
-func (m *MockStore) GetMaxUpdatedAt(n int) *time.Time {
+// To position an expectation, use `ExpectGetRestartFromUpdatedAt(..)`
+func (m *MockStore) GetRestartFromUpdatedAt(n int) *time.Time {
 	e := m.popExpectation()
 	if e == nil {
-		m.Errorf("mock received `GetMaxUpdatedAt` but no expectation was set")
+		m.Errorf("mock received `GetRestartFromUpdatedAt` but no expectation was set")
 	}
-	ee, ok := e.(*ExpectedGetMaxUpdatedAt)
+	ee, ok := e.(*ExpectedGetRestartFromUpdatedAt)
 	if !ok {
-		m.Errorf("mock received `GetMaxUpdatedAt` but was expecting `%s`\n", e.Describe())
+		m.Errorf("mock received `GetRestartFromUpdatedAt` but was expecting `%s`\n", e.Describe())
 	}
 	// Implement the necessary mocking
 	return &ee.t
 }
 
-// ExpectGetMaxUpdatedAt sets an expectation on the
-// `GetMaxUpdatedAt` method.
-func (m *MockStore) ExpectGetMaxUpdatedAt() *ExpectedGetMaxUpdatedAt {
-	e := ExpectedGetMaxUpdatedAt{}
+// ExpectGetRestartFromUpdatedAt sets an expectation on the
+// `GetRestartFromUpdatedAt` method.
+func (m *MockStore) ExpectGetRestartFromUpdatedAt() *ExpectedGetRestartFromUpdatedAt {
+	e := ExpectedGetRestartFromUpdatedAt{}
 	m.expectations = append(m.expectations, &e)
 	return &e
 }
@@ -233,25 +233,25 @@ func (e *ExpectedReplaceIssueStateAndEvents) WillReturnError(err error) *Expecte
 	return e
 }
 
-// ExpectedGetMaxUpdatedAt
+// ExpectedGetRestartFromUpdatedAt
 // -----------------------
 
-// ExpectedGetMaxUpdatedAt represents an expectation for the
-// `GetMaxUpdatedAt` method.
-type ExpectedGetMaxUpdatedAt struct {
+// ExpectedGetRestartFromUpdatedAt represents an expectation for the
+// `GetRestartFromUpdatedAt` method.
+type ExpectedGetRestartFromUpdatedAt struct {
 	t time.Time
 }
 
 // WillReturn can be used to specify which value the
-// `GetMaxUpdatedAt` should return.
-func (e *ExpectedGetMaxUpdatedAt) WillReturn(t time.Time) *ExpectedGetMaxUpdatedAt {
+// `GetRestartFromUpdatedAt` should return.
+func (e *ExpectedGetRestartFromUpdatedAt) WillReturn(t time.Time) *ExpectedGetRestartFromUpdatedAt {
 	e.t = t
 	return e
 }
 
 // Describe describes the expectation
-func (e *ExpectedGetMaxUpdatedAt) Describe() string {
-	return fmt.Sprintf("GetMaxUpdatedAt")
+func (e *ExpectedGetRestartFromUpdatedAt) Describe() string {
+	return fmt.Sprintf("GetRestartFromUpdatedAt")
 }
 
 // Other
