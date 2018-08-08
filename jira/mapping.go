@@ -42,22 +42,26 @@ func issueEventsFromIssue(i *jira.Issue) []store.IssueEvent {
 			for _, cli := range h.Items {
 				switch cli.Field {
 				case "status":
+					from := cli.FromString
+					to := cli.ToString
 					issueEvents = append(issueEvents, store.IssueEvent{
 						EventTime:        parseTime(h.Created),
 						EventKind:        "status_changed",
 						EventAuthor:      h.Author.Name,
 						IssueKey:         i.Key,
-						StatusChangeFrom: &cli.FromString,
-						StatusChangeTo:   &cli.ToString,
+						StatusChangeFrom: &from,
+						StatusChangeTo:   &to,
 					})
 				case "assignee":
+					from := cli.FromString
+					to := cli.ToString
 					issueEvents = append(issueEvents, store.IssueEvent{
 						EventTime:          parseTime(h.Created),
 						EventKind:          "assignee_changed",
 						EventAuthor:        h.Author.Name,
 						IssueKey:           i.Key,
-						AssigneeChangeFrom: &cli.FromString,
-						AssigneeChangeTo:   &cli.ToString,
+						AssigneeChangeFrom: &from,
+						AssigneeChangeTo:   &to,
 					})
 				default:
 					continue

@@ -76,14 +76,19 @@ func (c *APIClient) GetIssue(issueKey string) *jira.Issue {
 // implement new features.
 func (c *APIClient) ExploreRawIssue(issueKey string) {
 	i := NewAPIClient().GetIssue(issueKey)
-	fmt.Printf("issue: %v\n", i)
+	fmt.Printf("issue:\n")
+	fmt.Println(i)
 	fmt.Println("---")
-	fmt.Printf("fields: %v\n", i.Fields)
+	fmt.Printf("fields:\n")
+	fmt.Println(i.Fields)
 	fmt.Println("---")
 	if i.Changelog != nil {
 		fmt.Printf("changelog histories:\n")
-		for _, h := range i.Changelog.Histories {
-			fmt.Printf("  - %v\n", h)
+		for j, h := range i.Changelog.Histories {
+			fmt.Printf("  -- history %d (%s)\n", j, h.Created)
+			for _, item := range h.Items {
+				fmt.Printf("   |-> %s: %s -> %s\n", item.Field, item.FromString, item.ToString)
+			}
 		}
 		fmt.Println("---")
 	}
