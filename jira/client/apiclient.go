@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/andygrunwald/go-jira"
 )
@@ -59,15 +60,15 @@ func (c *APIClient) SearchIssues(query string, issueKeys chan string) {
 // GetIssue fetches the issue specified by the key from the Jira
 // API using `go-jira` and returns a `jira.Issue`.
 func (c *APIClient) GetIssue(issueKey string) *jira.Issue {
-	log.Printf("Fetching issue %s\n", issueKey)
 	i, r, err := c.Issue.Get(issueKey, &jira.GetQueryOptions{
 		Expand:       "names,schema,changelog",
 		FieldsByKeys: true,
 	})
 	if err != nil {
 		// TODO: instead of crashing, should handle the error and retry
-		log.Fatalln(fmt.Errorf("error in `getIssue`: %s -- response: %v", err, r))
+		log.Fatalln(fmt.Errorf("error in `GetIssue` for `%s`: %s -- response: %v", issueKey, err, r))
 	}
+	log.Printf("Fetched issue %s (updated: %s)\n", issueKey, time.Time(i.Fields.Updated))
 	return i
 }
 
