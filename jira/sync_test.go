@@ -36,7 +36,7 @@ func TestPerformIncrementalSync(t *testing.T) {
 	c := client.NewMockClient(t)
 	s := store.NewMockStore(t)
 
-	s.ExpectGetMaxUpdatedAt().WillReturn(refTime)
+	s.ExpectGetRestartFromUpdatedAt().WillReturn(refTime)
 
 	// Perform a search with `updated > 'max issue_updated_at'`
 	expectedJiraQuery := fmt.Sprintf("updated > '%s' ORDER BY created ASC", timeAsStr(refTime))

@@ -7,7 +7,7 @@ import (
 // Store is an interface for the application's store
 type Store interface {
 	ReplaceIssueStateAndEvents(k string, is IssueState, ies []IssueEvent) (err error)
-	GetMaxUpdatedAt() *time.Time
+	GetRestartFromUpdatedAt(n int) *time.Time
 	CreateTables()
 	DropTables()
 }
