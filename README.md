@@ -79,14 +79,14 @@ _NB: the DB must have been initialized and a first synchronization done._
 
 #### Add a new field to the _Jira Issue States_
 
-1. In `store/pgstore.go`:
+- **In `store/pgstore.go`**
   - In `CreateTables(..)`, add the column for the new field to the `jira_issues_states` table.
   - In `insertIssueState(..)`, add the new value in the `INSERT`.
-2. In `store/store.go`:
+- **In `store/store.go`**
   - Change the `IssueState struct` to add the new field.
-3. [Optional] If you want to add the field to the tests (necessary if the field is mandatory or you do some operation - e.g. mapping or conversion), in `store/mockstore.go`:
+- **[Optional] If you want to add the field to the tests (necessary if the field is mandatory or you do some operation - e.g. mapping or conversion), in `store/mockstore.go`**
   - Update `ReplaceIssueStateAndEvents(..)` to check the value for the new field.
-4. In `jira/mapping.go`:
+- **In `jira/mapping.go`**
   - Change `issueStateFromIssue(..)` to generate the correct `store.IssueState` for your issue, adding the new field. (This is where you will do the mapping with custom fields.)
 
 NB: you can use the `explore-custom-fields` action on the command line to get custom fields mappings.
@@ -102,9 +102,9 @@ For now, the following events are generated from the issue's data:
 
 If you want to add new kinds of events:
 
-1. In `jira/mapping.go`:
+- **In `jira/mapping.go`**
   - Edit `issueEventsFromIssue(..)` to generate your new events for each issue processed. You can see how the existing events are generated.
-2. [Optional] If you need to change the _Jira Issue Events_ structure to add columns related to your new events, you can follow the instructions for _Jira Issue States_ above, there is not much difference (unless you should look for event-related functions!).
+- [Optional] If you need to change the _Jira Issue Events_ structure to add columns related to your new events, you can follow the instructions for _Jira Issue States_ above, there is not much difference (unless you should look for event-related functions!).
 
 ## Troubleshooting
 
