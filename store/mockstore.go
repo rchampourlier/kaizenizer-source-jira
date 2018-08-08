@@ -135,7 +135,7 @@ func (m *MockStore) ReplaceIssueStateAndEvents(ik string, is IssueState, ies []I
 // expectation.
 //
 // To position an expectation, use `ExpectGetMaxUpdatedAt(..)`
-func (m *MockStore) GetMaxUpdatedAt() *time.Time {
+func (m *MockStore) GetMaxUpdatedAt(n int) *time.Time {
 	e := m.popExpectation()
 	if e == nil {
 		m.Errorf("mock received `GetMaxUpdatedAt` but no expectation was set")

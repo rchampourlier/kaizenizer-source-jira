@@ -52,11 +52,26 @@ func (s *PGStore) ReplaceIssueStateAndEvents(k string, is IssueState, ies []Issu
 	return
 }
 
-// GetMaxUpdatedAt returns the max value of `issue_updated_at`
-// from the `jira_issues_states` table.
-func (s *PGStore) GetMaxUpdatedAt() *time.Time {
+// GetMaxUpdatedAt returns the `n`th value of `issue_updated_at` from
+// `jira_issues_states` in descending order.
+//
+// Instead of taking the maximum value, taking the `n`th one enables
+// to continue the synchronization restarting from some issues before
+// the one we stopped. Since issues are fetched in parallel through
+// several goroutines, a crash or error may have processed newer issues
+// that the one it crashed for. `n` should thus be taken at least to
+// the number of goroutines fetching issues, even better a multiple.
+func (s *PGStore) GetMaxUpdatedAt(n int) *time.Time {
 	var maxUpdatedAt time.Time
-	err := s.QueryRow("SELECT MAX(issue_updated_at) FROM jira_issues_states").Scan(&maxUpdatedAt)
+	q := `
+	SELECT MIN(issue_updated_at)
+	FROM (
+		SELECT issue_updated_at
+		FROM jira_issues_states 
+		ORDER BY issue_updated_at DESC LIMIT $1
+	) subq
+	`
+	err := s.QueryRow(q, n).Scan(&maxUpdatedAt)
 	switch {
 	case err != nil:
 		log.Fatal(err)

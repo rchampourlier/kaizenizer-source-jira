@@ -56,13 +56,13 @@ func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
 	}()
 
 	// Search issues (fetch issue keys)
-	maxUpdatedAt := store.GetMaxUpdatedAt()
-	q := fmt.Sprintf("updated > '%d/%d/%d %d:%d' ORDER BY created ASC",
-		maxUpdatedAt.Year(),
-		maxUpdatedAt.Month(),
-		maxUpdatedAt.Day(),
-		maxUpdatedAt.Hour(),
-		maxUpdatedAt.Minute())
+	restartFromUpdatedAt := store.GetMaxUpdatedAt(poolSize * 3)
+	q := fmt.Sprintf("updated > '%d/%d/%d %d:%d' ORDER BY updated ASC",
+		restartFromUpdatedAt.Year(),
+		restartFromUpdatedAt.Month(),
+		restartFromUpdatedAt.Day(),
+		restartFromUpdatedAt.Hour(),
+		restartFromUpdatedAt.Minute())
 	c.SearchIssues(q, issueKeys)
 	wg.Add(1) // Adding a job to wait for the processing of `issueKeys`
 
@@ -106,7 +106,7 @@ func PerformSync(c Client, store store.Store, poolSize int) {
 		}
 	}()
 
-	c.SearchIssues("order by created ASC", issueKeys)
+	c.SearchIssues("ORDER BY updated ASC", issueKeys)
 
 	// Wait until all fetches are done
 	wg.Wait()

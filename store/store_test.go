@@ -110,10 +110,10 @@ func TestPGStore_GetMaxUpdatedAt(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"max"}).
 		AddRow(timeV)
 
-	mock.ExpectQuery("SELECT MAX\\(issue_updated_at\\) FROM jira_issues_states").
+	mock.ExpectQuery("SELECT MIN\\(issue_updated_at\\) FROM \\( SELECT issue_updated_at FROM jira_issues_states ORDER BY issue_updated_at DESC LIMIT \\$1 \\)").
 		WillReturnRows(rows)
 
-	r := s.GetMaxUpdatedAt()
+	r := s.GetMaxUpdatedAt(10)
 	if *r != timeV {
 		t.Errorf("unexpected result `%v`, expected `%v`\n", r, timeV)
 	}
