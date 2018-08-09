@@ -8,6 +8,7 @@ import (
 
 	"github.com/rchampourlier/agilizer-source-jira/jira"
 	"github.com/rchampourlier/agilizer-source-jira/jira/client"
+	"github.com/rchampourlier/agilizer-source-jira/jira/mapping"
 	"github.com/rchampourlier/agilizer-source-jira/store"
 )
 
@@ -57,6 +58,7 @@ func main() {
 	db := openDB()
 	defer db.Close()
 	store := store.NewPGStore(db)
+	m := mapping.Mapper{}
 
 	switch os.Args[1] {
 
@@ -64,18 +66,18 @@ func main() {
 		store.DropTables()
 		store.CreateTables()
 		c := client.NewAPIClient()
-		jira.PerformSync(c, store, poolSize)
+		jira.PerformSync(c, store, poolSize, &m)
 
 	case "sync":
 		c := client.NewAPIClient()
-		jira.PerformIncrementalSync(c, store, poolSize)
+		jira.PerformIncrementalSync(c, store, poolSize, &m)
 
 	case "sync-issue":
 		if len(os.Args) < 3 {
 			usage()
 		}
 		c := client.NewAPIClient()
-		jira.PerformSyncForIssueKey(c, store, os.Args[2])
+		jira.PerformSyncForIssueKey(c, store, os.Args[2], &m)
 
 	case "explore-raw-issue":
 		if len(os.Args) < 3 {

@@ -22,7 +22,7 @@ import (
 // - For each updated issue, the records already in the store are
 //   dropped (e.g. the issue's state and events) so they can be
 //   recreated.
-func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
+func PerformIncrementalSync(c Client, store store.Store, poolSize int, m Mapper) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 
@@ -40,7 +40,7 @@ func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
 		defer wg.Done()
 
 		i := c.GetIssue(key.(string))
-		store.ReplaceIssueStateAndEvents(key.(string), issueStateFromIssue(i), issueEventsFromIssue(i))
+		store.ReplaceIssueStateAndEvents(key.(string), m.IssueStateFromIssue(i), m.IssueEventsFromIssue(i))
 		return nil
 	})
 	defer p.Close()
@@ -78,7 +78,7 @@ func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
 //
 // Each fetched issue is then processed to generate `IssueState` and
 // `IssueEvent` records that are stored in the application's store.
-func PerformSync(c Client, store store.Store, poolSize int) {
+func PerformSync(c Client, store store.Store, poolSize int, m Mapper) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 
@@ -94,7 +94,7 @@ func PerformSync(c Client, store store.Store, poolSize int) {
 		defer wg.Done()
 
 		i := c.GetIssue(key.(string))
-		store.ReplaceIssueStateAndEvents(key.(string), issueStateFromIssue(i), issueEventsFromIssue(i))
+		store.ReplaceIssueStateAndEvents(key.(string), m.IssueStateFromIssue(i), m.IssueEventsFromIssue(i))
 		return nil
 	})
 	defer p.Close()
@@ -116,12 +116,12 @@ func PerformSync(c Client, store store.Store, poolSize int) {
 
 // PerformSyncForIssueKey is the same as `PerformSync` but for a single
 // issue specified by its key.
-func PerformSyncForIssueKey(c Client, store store.Store, issueKey string) {
+func PerformSyncForIssueKey(c Client, store store.Store, issueKey string, m Mapper) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 
 	i := c.GetIssue(issueKey)
-	store.ReplaceIssueStateAndEvents(issueKey, issueStateFromIssue(i), issueEventsFromIssue(i))
+	store.ReplaceIssueStateAndEvents(issueKey, m.IssueStateFromIssue(i), m.IssueEventsFromIssue(i))
 
 	log.Printf("Sync done in %f minutes\n", time.Since(beforeSync).Minutes())
 }

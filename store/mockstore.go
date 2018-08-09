@@ -49,26 +49,27 @@ func (m *MockStore) ReplaceIssueStateAndEvents(ik string, is IssueState, ies []I
 	}
 
 	// Check issue state
-	if is.CreatedAt != ee.issueState.CreatedAt {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.CreatedAt=`%v` but was expecting `%v`\n", is.CreatedAt, ee.issueState.CreatedAt)
+	eis := *ee.issueState
+	if is.CreatedAt != eis.CreatedAt {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.CreatedAt=`%v` but was expecting `%v`\n", is.CreatedAt, eis.CreatedAt)
 	}
-	if is.UpdatedAt != ee.issueState.UpdatedAt {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.UpdatedAt=`%v` but was expecting `%v`\n", is.UpdatedAt, ee.issueState.UpdatedAt)
+	if is.UpdatedAt != eis.UpdatedAt {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.UpdatedAt=`%v` but was expecting `%v`\n", is.UpdatedAt, eis.UpdatedAt)
 	}
-	if is.Key != ee.issueState.Key {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Key=`%v` but was expecting `%v`\n", is.Key, ee.issueState.Key)
+	if is.Key != eis.Key {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Key=`%v` but was expecting `%v`\n", is.Key, eis.Key)
 	}
-	if *is.Project != *ee.issueState.Project {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Project=`%v` but was expecting `%v`\n", *is.Project, *ee.issueState.Project)
+	if eis.Project != nil && *is.Project != *eis.Project {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Project=`%v` but was expecting `%v`\n", *is.Project, *eis.Project)
 	}
-	if *is.ResolvedAt != *ee.issueState.ResolvedAt {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.ResolvedAt=`%v` but was expecting `%v`\n", *is.ResolvedAt, *ee.issueState.ResolvedAt)
+	if eis.ResolvedAt != nil && *is.ResolvedAt != *eis.ResolvedAt {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.ResolvedAt=`%v` but was expecting `%v`\n", *is.ResolvedAt, *eis.ResolvedAt)
 	}
-	if *is.Summary != *ee.issueState.Summary {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Summary=`%v` but was expecting `%v`\n", *is.Summary, *ee.issueState.Summary)
+	if eis.Summary != nil && *is.Summary != *eis.Summary {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Summary=`%v` but was expecting `%v`\n", *is.Summary, *eis.Summary)
 	}
-	if *is.Description != *ee.issueState.Description {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Description=`%v` but was expecting `%v`\n", *is.Summary, *ee.issueState.Description)
+	if eis.Description != nil && *is.Description != *eis.Description {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Description=`%v` but was expecting `%v`\n", *is.Summary, *eis.Description)
 	}
 
 	// Check count of events
