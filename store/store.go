@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -51,4 +52,27 @@ type IssueEvent struct {
 	StatusChangeTo     *string
 	AssigneeChangeFrom *string
 	AssigneeChangeTo   *string
+}
+
+func (ie IssueEvent) String() string {
+	var from, to string
+	switch ie.EventKind {
+	case "status_changed":
+		if ie.StatusChangeFrom != nil {
+			from = *ie.StatusChangeFrom
+		}
+		if ie.StatusChangeTo != nil {
+			to = *ie.StatusChangeTo
+		}
+	case "assignee_changed":
+		if ie.AssigneeChangeFrom != nil {
+			from = *ie.AssigneeChangeFrom
+		}
+		if ie.AssigneeChangeTo != nil {
+			to = *ie.AssigneeChangeTo
+		}
+	default:
+		return fmt.Sprintf("<IssueEvent:%s: time=%s author=%s issueKey=%s>", ie.EventKind, ie.EventTime, ie.EventAuthor, ie.IssueKey)
+	}
+	return fmt.Sprintf("<IssueEvent:%s `%s` -> `%s`: time=%s author=%s issueKey=%s>", ie.EventKind, from, to, ie.EventTime, ie.EventAuthor, ie.IssueKey)
 }

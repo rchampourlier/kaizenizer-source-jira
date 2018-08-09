@@ -53,9 +53,12 @@ func (m *Mapper) IssueEventsFromIssue(i *extJira.Issue) []store.IssueEvent {
 		}
 	}
 
-	// Add a `assignee_changed` event if the issue was created with an assignee
-	// Add a `status_changed` event if the issue was created with a status
+	// If no assignee changelog, create a assignee_changed event with the current
+	// assignee.
+	// Do the same with status changed.
 
+	hasChangelogOnStatus := false
+	hasChangelogOnAssignee := false
 	if i.Changelog != nil {
 		for _, h := range i.Changelog.Histories {
 			for _, cli := range h.Items {
@@ -63,6 +66,19 @@ func (m *Mapper) IssueEventsFromIssue(i *extJira.Issue) []store.IssueEvent {
 				case "status":
 					from := cli.FromString
 					to := cli.ToString
+					if !hasChangelogOnStatus {
+						// first changelog on status
+						// => generate additional event with initial status
+						issueEvents = append(issueEvents, store.IssueEvent{
+							EventTime:        time.Time(i.Fields.Created),
+							EventKind:        "status_changed",
+							EventAuthor:      h.Author.Name,
+							IssueKey:         i.Key,
+							StatusChangeFrom: nil,
+							StatusChangeTo:   &from,
+						})
+					}
+					hasChangelogOnStatus = true
 					issueEvents = append(issueEvents, store.IssueEvent{
 						EventTime:        parseTime(h.Created),
 						EventKind:        "status_changed",
@@ -71,9 +87,23 @@ func (m *Mapper) IssueEventsFromIssue(i *extJira.Issue) []store.IssueEvent {
 						StatusChangeFrom: &from,
 						StatusChangeTo:   &to,
 					})
+
 				case "assignee":
 					from := cli.FromString
 					to := cli.ToString
+					if !hasChangelogOnAssignee {
+						// first changelog on assignee
+						// => generate additional event with initial assignee
+						issueEvents = append(issueEvents, store.IssueEvent{
+							EventTime:          time.Time(i.Fields.Created),
+							EventKind:          "assignee_changed",
+							EventAuthor:        h.Author.Name,
+							IssueKey:           i.Key,
+							AssigneeChangeFrom: nil,
+							AssigneeChangeTo:   &from,
+						})
+					}
+					hasChangelogOnAssignee = true
 					issueEvents = append(issueEvents, store.IssueEvent{
 						EventTime:          parseTime(h.Created),
 						EventKind:          "assignee_changed",
@@ -91,7 +121,37 @@ func (m *Mapper) IssueEventsFromIssue(i *extJira.Issue) []store.IssueEvent {
 
 	// If there was no `status_changed` event created, and the issue has a status,
 	// add a `status_changed` event for the initial status.
+	if !hasChangelogOnStatus {
+		author := "N/A"
+		if rn := reporterName(i); rn != nil {
+			author = *rn
+		}
+		issueEvents = append(issueEvents, store.IssueEvent{
+			EventTime:        time.Time(i.Fields.Created),
+			EventKind:        "status_changed",
+			EventAuthor:      author,
+			IssueKey:         i.Key,
+			StatusChangeFrom: nil,
+			StatusChangeTo:   &(i.Fields.Status.Name),
+		})
+	}
+
 	// Do the same for the assignee.
+	// NB: an issue may have no assignee.
+	if !hasChangelogOnAssignee && i.Fields.Assignee != nil {
+		author := "N/A"
+		if rn := reporterName(i); rn != nil {
+			author = *rn
+		}
+		issueEvents = append(issueEvents, store.IssueEvent{
+			EventTime:          time.Time(i.Fields.Created),
+			EventKind:          "assignee_changed",
+			EventAuthor:        author,
+			IssueKey:           i.Key,
+			AssigneeChangeFrom: nil,
+			AssigneeChangeTo:   &(i.Fields.Assignee.Name),
+		})
+	}
 
 	return issueEvents
 }
