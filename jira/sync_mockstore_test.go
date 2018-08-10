@@ -1,4 +1,4 @@
-package store
+package jira_test
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/rchampourlier/agilizer-source-jira/store"
 )
 
 // MockStore implements the `Store` interface for tests
@@ -37,7 +39,7 @@ func NewMockStore(t *testing.T) *MockStore {
 // `ReplaceIssueStateAndEvents` is called is not important, so it
 // will proceed differently for these expectations to ignore
 // order.
-func (m *MockStore) ReplaceIssueStateAndEvents(ik string, is IssueState, ies []IssueEvent) (err error) {
+func (m *MockStore) ReplaceIssueStateAndEvents(ik string, is store.IssueState, ies []store.IssueEvent) (err error) {
 	ee := m.popExpectedReplaceIssueStateAndEventsForIssueKey(ik)
 	if ee == nil {
 		log.Fatalf("mock received `ReplaceIssueStateAndEvents` but no `ReplaceIssueStateAndEvents` for the issue key `%s` was found", ik)
@@ -193,8 +195,8 @@ func (m *MockStore) ExpectReplaceIssueStateAndEvents() *ExpectedReplaceIssueStat
 // `ReplaceIssueStateAndEvents` method.
 type ExpectedReplaceIssueStateAndEvents struct {
 	issueKey    string
-	issueState  *IssueState
-	issueEvents []*IssueEvent
+	issueState  *store.IssueState
+	issueEvents []*store.IssueEvent
 	err         error
 }
 
@@ -214,7 +216,7 @@ func (e *ExpectedReplaceIssueStateAndEvents) WithIssueKey(ik string) *ExpectedRe
 // WithIssueState specifies the `*IssueState` argument
 // the `ReplaceIssueStateAndEvents` method is expected
 // to receive for this expectation
-func (e *ExpectedReplaceIssueStateAndEvents) WithIssueState(is *IssueState) *ExpectedReplaceIssueStateAndEvents {
+func (e *ExpectedReplaceIssueStateAndEvents) WithIssueState(is *store.IssueState) *ExpectedReplaceIssueStateAndEvents {
 	e.issueState = is
 	return e
 }
@@ -222,7 +224,7 @@ func (e *ExpectedReplaceIssueStateAndEvents) WithIssueState(is *IssueState) *Exp
 // WithIssueEvents specifies the `[]*IssueEvent` argument
 // the `ReplaceIssueStateAndEvents` method is expected
 // to receive for this expectation
-func (e *ExpectedReplaceIssueStateAndEvents) WithIssueEvents(ies []*IssueEvent) *ExpectedReplaceIssueStateAndEvents {
+func (e *ExpectedReplaceIssueStateAndEvents) WithIssueEvents(ies []*store.IssueEvent) *ExpectedReplaceIssueStateAndEvents {
 	e.issueEvents = ies
 	return e
 }

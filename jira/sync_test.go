@@ -30,7 +30,7 @@ func TestPerformIncrementalSync(t *testing.T) {
 	issueKeys := []string{"PJ-1", "PJ-2", "PJ-3"}
 
 	c := client.NewMockClient(t)
-	s := store.NewMockStore(t)
+	s := NewMockStore(t)
 
 	s.ExpectGetRestartFromUpdatedAt().WillReturn(refTime)
 
@@ -66,7 +66,7 @@ func TestPerformSync(t *testing.T) {
 	issueKeys := []string{"PJ-1", "PJ-2", "PJ-3"}
 
 	c := client.NewMockClient(t)
-	s := store.NewMockStore(t)
+	s := NewMockStore(t)
 
 	// Perform a search with `updated > 'max issue_updated_at'`
 	c.ExpectSearchIssues("ORDER BY updated ASC").WillRespondWithIssueKeys(issueKeys)
@@ -92,7 +92,7 @@ func TestPerformSyncForIssueKey(t *testing.T) {
 	k := "PJ-1"
 
 	c := client.NewMockClient(t)
-	s := store.NewMockStore(t)
+	s := NewMockStore(t)
 
 	c.ExpectGetIssue(k).WillRespondWithIssue(&extJira.Issue{})
 
