@@ -8,7 +8,6 @@ $(DOCKER_CMD): clean
 	mkdir -p $(DOCKER_BUILD)
 	$(GO_BUILD_ENV) go build -v -o $(DOCKER_CMD) .
 	docker build . -t $(DOCKER_TAG)
-	docker tag $(DOCKER_TAG) $(ECR_TAG)
 
 push:
 	docker push $(ECR_TAG)

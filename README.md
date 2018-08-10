@@ -75,9 +75,17 @@ go run *.go sync
 
 _NB: the DB must have been initialized and a first synchronization done._
 
-### How to change the generated state and event records
+### How to contribute / customize
 
-#### Add a new field to the _Jira Issue States_
+#### Run tests
+
+```
+make test
+```
+
+#### How to change the generated state and event records
+
+##### Add a new field to the _Jira Issue States_
 
 - **In `store/pgstore.go`**
   - In `CreateTables(..)`, add the column for the new field to the `jira_issues_states` table.
@@ -86,12 +94,13 @@ _NB: the DB must have been initialized and a first synchronization done._
   - Change the `IssueState struct` to add the new field.
 - **[Optional] If you want to add the field to the tests (necessary if the field is mandatory or you do some operation - e.g. mapping or conversion), in `store/mockstore.go`**
   - Update `ReplaceIssueStateAndEvents(..)` to check the value for the new field.
-- **In `jira/mapping.go`**
-  - Change `issueStateFromIssue(..)` to generate the correct `store.IssueState` for your issue, adding the new field. (This is where you will do the mapping with custom fields.)
+- **In `jira/mapping/mapper.go`**
+  - Change `IssueStateFromIssue(..)` to generate the correct `store.IssueState` for your issue, adding the new field. (This is where you will do the mapping with custom fields.)
+- Run the tests and fix/update as necessary.
 
 NB: you can use the `explore-custom-fields` action on the command line to get custom fields mappings.
 
-#### Generate new kinds of _Jira Issue Events_
+##### Generate new kinds of _Jira Issue Events_
 
 For now, the following events are generated from the issue's data:
 
@@ -102,9 +111,11 @@ For now, the following events are generated from the issue's data:
 
 If you want to add new kinds of events:
 
-- **In `jira/mapping.go`**
-  - Edit `issueEventsFromIssue(..)` to generate your new events for each issue processed. You can see how the existing events are generated.
+- **In `jira/mapping/mapper.go`**
+  - Edit `IssueEventsFromIssue(..)` to generate your new events for each issue processed. You can see how the existing events are generated.
+  - Update the corresponding tests in `jira/mapping/mapper_test.go`
 - [Optional] If you need to change the _Jira Issue Events_ structure to add columns related to your new events, you can follow the instructions for _Jira Issue States_ above, there is not much difference (unless you should look for event-related functions!).
+- As always, do not forget to run tests and fix/update them if necessary.
 
 ## Troubleshooting
 

@@ -12,179 +12,99 @@ import (
 	"github.com/rchampourlier/agilizer-source-jira/store"
 )
 
-// This tests the `jira` package.
-//
-// `jira/mapping.go` is not unit tested but its tested in integration
-// through these tests.
+// TODO: expectations should be checked (ensure they have been
+// verified)
+
+type mapperMock struct{}
+
+func (m *mapperMock) IssueEventsFromIssue(i *extJira.Issue) []store.IssueEvent {
+	return []store.IssueEvent{store.IssueEvent{}}
+}
+
+func (m *mapperMock) IssueStateFromIssue(i *extJira.Issue) store.IssueState {
+	return store.IssueState{}
+}
 
 func TestPerformIncrementalSync(t *testing.T) {
-	issueMocks := []struct {
-		key        string
-		changelogs []string
-	}{
-		{"PJ-1", []string{}},
-		{"PJ-2", []string{"status", "Open", "In Dev"}},
-		{"PJ-3", []string{"assignee", "Me", "You"}},
-	}
-	var issueKeys []string
-	for _, issueMock := range issueMocks {
-		issueKeys = append(issueKeys, issueMock.key)
-	}
-
 	refTime := time.Now()
+	issueKeys := []string{"PJ-1", "PJ-2", "PJ-3"}
 
 	c := client.NewMockClient(t)
-	s := store.NewMockStore(t)
+	s := NewMockStore(t)
 
 	s.ExpectGetRestartFromUpdatedAt().WillReturn(refTime)
 
 	// Perform a search with `updated > 'max issue_updated_at'`
-	expectedJiraQuery := fmt.Sprintf("updated > '%s' ORDER BY created ASC", timeAsStr(refTime))
-	c.ExpectSearchIssues(expectedJiraQuery).
-		WillRespondWithIssueKeys(issueKeys)
+	expectedJiraQuery := fmt.Sprintf(
+		"updated > '%d.*%d.*%d.*%d.*%d.*' ORDER BY updated ASC",
+		refTime.Year(),
+		refTime.Month(),
+		refTime.Day(),
+		refTime.Hour(),
+		refTime.Minute(),
+	)
+	c.ExpectSearchIssues(expectedJiraQuery).WillRespondWithIssueKeys(issueKeys)
 
 	// for each issue in the search results
-	for _, im := range issueMocks {
-		i, is, ies := mockIssue(im.key, refTime, im.changelogs)
-
+	for _, k := range issueKeys {
 		// perform a get issue
-		c.ExpectGetIssue(im.key).WillRespondWithIssue(i)
+		c.ExpectGetIssue(k).WillRespondWithIssue(&extJira.Issue{})
 
 		// replace previous records of the issue with new
 		//   state and events records
 		s.ExpectReplaceIssueStateAndEvents().
-			WithIssueKey(im.key).
-			WithIssueState(is).
-			WithIssueEvents(ies).
+			WithIssueKey(k).
+			WithIssueState(&store.IssueState{}).
+			WithIssueEvents([]*store.IssueEvent{&store.IssueEvent{}}).
 			WillReturnError(nil)
 	}
 
-	jira.PerformIncrementalSync(c, s, 10)
+	jira.PerformIncrementalSync(c, s, 10, &mapperMock{})
 }
 
-// mockIssue mocks a Jira issue. It returns the mocked `extJira.Issue` as well
-// as the corresponding `store.IssueState` and `store.IssueEvent`s that are to
-// be expected for this issue.
-func mockIssue(issueKey string, refTime time.Time, changelogs []string) (*extJira.Issue, *store.IssueState, []*store.IssueEvent) {
-	issueFields := extJira.IssueFields{
-		Type:           extJira.IssueType{Name: "Bug"},
-		Project:        extJira.Project{Key: "PJ", Name: "Project"},
-		Status:         &extJira.Status{Name: "In Review"},
-		Resolutiondate: extJira.Time(refTime),
-		Created:        extJira.Time(refTime),
-		Duedate:        extJira.Date(refTime),
-		Updated:        extJira.Time(refTime),
-		Priority:       &extJira.Priority{Name: "Major"},
-		Summary:        "summary",
-		Description:    "description",
-	}
-	changelog := extJira.Changelog{}
-	if len(changelogs) > 0 {
-		switch changelogs[0] { // kind of changelog
-		case "assignee":
-			h := extJira.ChangelogHistory{
-				Author: extJira.User{
-					Name: "assignee_change_author",
-				},
-				Created: timeAsStr(refTime),
-				Items: []extJira.ChangelogItems{
-					extJira.ChangelogItems{
-						Field:      "assignee",
-						FieldType:  "string",
-						From:       changelogs[1],
-						FromString: changelogs[1],
-						To:         changelogs[2],
-						ToString:   changelogs[2],
-					},
-				},
-			}
-			changelog.Histories = append(changelog.Histories, h)
-		case "status":
-			h := extJira.ChangelogHistory{
-				Author: extJira.User{
-					Name: "status_change_author",
-				},
-				Created: timeAsStr(refTime),
-				Items: []extJira.ChangelogItems{
-					extJira.ChangelogItems{
-						Field:      "status",
-						FieldType:  "string",
-						From:       changelogs[1],
-						FromString: changelogs[1],
-						To:         changelogs[2],
-						ToString:   changelogs[2],
-					},
-				},
-			}
-			changelog.Histories = append(changelog.Histories, h)
-		default:
-		}
+func TestPerformSync(t *testing.T) {
+	issueKeys := []string{"PJ-1", "PJ-2", "PJ-3"}
+
+	c := client.NewMockClient(t)
+	s := NewMockStore(t)
+
+	// Perform a search with `updated > 'max issue_updated_at'`
+	c.ExpectSearchIssues("ORDER BY updated ASC").WillRespondWithIssueKeys(issueKeys)
+
+	// for each issue in the search results
+	for _, k := range issueKeys {
+		// perform a get issue
+		c.ExpectGetIssue(k).WillRespondWithIssue(&extJira.Issue{})
+
+		// replace previous records of the issue with new
+		//   state and events records
+		s.ExpectReplaceIssueStateAndEvents().
+			WithIssueKey(k).
+			WithIssueState(&store.IssueState{}).
+			WithIssueEvents([]*store.IssueEvent{&store.IssueEvent{}}).
+			WillReturnError(nil)
 	}
 
-	i := &extJira.Issue{
-		Key:       issueKey,
-		Fields:    &issueFields,
-		Changelog: &changelog,
-	}
-	is := &store.IssueState{
-		CreatedAt:   refTime,
-		UpdatedAt:   refTime,
-		Key:         issueKey,
-		Project:     strAddr("Project"),
-		ResolvedAt:  timeAddr(refTime),
-		Summary:     strAddr("summary"),
-		Description: strAddr("description"),
-	}
-	ies := []*store.IssueEvent{
-		{
-			EventTime:   refTime,
-			EventKind:   "created",
-			EventAuthor: "N/A",
-			// "N/A" because the issue's reporter is not set, so the required string is replaced by N/A
-			IssueKey:         issueKey,
-			CommentBody:      nil,
-			StatusChangeFrom: nil,
-			StatusChangeTo:   nil,
-		},
-	}
-	if len(changelogs) > 0 {
-		switch changelogs[0] {
-		case "assignee":
-			ies = append(ies, &store.IssueEvent{
-				EventTime:          refTime,
-				EventKind:          "assignee_changed",
-				EventAuthor:        "assignee_change_author",
-				IssueKey:           issueKey,
-				CommentBody:        nil,
-				StatusChangeFrom:   nil,
-				StatusChangeTo:     nil,
-				AssigneeChangeFrom: strAddr(changelogs[1]),
-				AssigneeChangeTo:   strAddr(changelogs[2]),
-			})
-		case "status":
-			ies = append(ies, &store.IssueEvent{
-				EventTime:          refTime,
-				EventKind:          "status_changed",
-				EventAuthor:        "status_change_author",
-				IssueKey:           issueKey,
-				CommentBody:        nil,
-				StatusChangeFrom:   strAddr(changelogs[1]),
-				StatusChangeTo:     strAddr(changelogs[2]),
-				AssigneeChangeFrom: nil,
-				AssigneeChangeTo:   nil,
-			})
-		}
-	}
-
-	return i, is, ies
+	jira.PerformSync(c, s, 10, &mapperMock{})
 }
 
-func strAddr(s string) *string {
-	return &s
-}
+func TestPerformSyncForIssueKey(t *testing.T) {
+	k := "PJ-1"
 
-func timeAddr(t time.Time) *time.Time {
-	return &t
+	c := client.NewMockClient(t)
+	s := NewMockStore(t)
+
+	c.ExpectGetIssue(k).WillRespondWithIssue(&extJira.Issue{})
+
+	// replace previous records of the issue with new
+	//   state and events records
+	s.ExpectReplaceIssueStateAndEvents().
+		WithIssueKey(k).
+		WithIssueState(&store.IssueState{}).
+		WithIssueEvents([]*store.IssueEvent{&store.IssueEvent{}}).
+		WillReturnError(nil)
+
+	jira.PerformSyncForIssueKey(c, s, k, &mapperMock{})
 }
 
 func timeAsStr(t time.Time) string {

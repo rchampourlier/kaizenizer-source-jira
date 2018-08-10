@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/andygrunwald/go-jira"
+	"github.com/rchampourlier/golib/matchers"
 )
 
 // MockClient is a mock to fake a client to Jira API. It
@@ -48,6 +49,7 @@ func (c *MockClient) SearchIssues(query string, issueKeys chan string) {
 	if !ok {
 		c.Errorf("mock received `SearchIssues` but was expecting %s\n", e.Describe())
 	}
+	matchers.MatchStringWithRegex(c.T, "query", esi.query, query, e.Describe())
 	for _, ik := range esi.issueKeys {
 		issueKeys <- ik
 	}

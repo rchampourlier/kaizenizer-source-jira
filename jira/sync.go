@@ -22,9 +22,9 @@ import (
 // - For each updated issue, the records already in the store are
 //   dropped (e.g. the issue's state and events) so they can be
 //   recreated.
-func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
+func PerformIncrementalSync(c Client, store store.Store, poolSize int, m Mapper) {
 	beforeSync := time.Now()
-	log.Printf("Sync starting\n")
+	log.Printf("Incremental sync starting\n")
 
 	// Using a chan of issue keys and a wait group for synchronization
 	issueKeys := make(chan string, 100)
@@ -40,7 +40,7 @@ func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
 		defer wg.Done()
 
 		i := c.GetIssue(key.(string))
-		store.ReplaceIssueStateAndEvents(key.(string), issueStateFromIssue(i), issueEventsFromIssue(i))
+		store.ReplaceIssueStateAndEvents(key.(string), m.IssueStateFromIssue(i), m.IssueEventsFromIssue(i))
 		return nil
 	})
 	defer p.Close()
@@ -78,7 +78,7 @@ func PerformIncrementalSync(c Client, store store.Store, poolSize int) {
 //
 // Each fetched issue is then processed to generate `IssueState` and
 // `IssueEvent` records that are stored in the application's store.
-func PerformSync(c Client, store store.Store, poolSize int) {
+func PerformSync(c Client, store store.Store, poolSize int, m Mapper) {
 	beforeSync := time.Now()
 	log.Printf("Sync starting\n")
 
@@ -94,7 +94,7 @@ func PerformSync(c Client, store store.Store, poolSize int) {
 		defer wg.Done()
 
 		i := c.GetIssue(key.(string))
-		store.ReplaceIssueStateAndEvents(key.(string), issueStateFromIssue(i), issueEventsFromIssue(i))
+		store.ReplaceIssueStateAndEvents(key.(string), m.IssueStateFromIssue(i), m.IssueEventsFromIssue(i))
 		return nil
 	})
 	defer p.Close()
@@ -104,9 +104,11 @@ func PerformSync(c Client, store store.Store, poolSize int) {
 			wg.Add(1)
 			go p.Process(issueKey)
 		}
+		wg.Done() // Done when all `issueKeys` have been sent for processing
 	}()
 
 	c.SearchIssues("ORDER BY updated ASC", issueKeys)
+	wg.Add(1) // Adding a job to wait for the processing of `issueKeys`
 
 	// Wait until all fetches are done
 	wg.Wait()
@@ -116,12 +118,12 @@ func PerformSync(c Client, store store.Store, poolSize int) {
 
 // PerformSyncForIssueKey is the same as `PerformSync` but for a single
 // issue specified by its key.
-func PerformSyncForIssueKey(c Client, store store.Store, issueKey string) {
+func PerformSyncForIssueKey(c Client, store store.Store, issueKey string, m Mapper) {
 	beforeSync := time.Now()
-	log.Printf("Sync starting\n")
+	log.Printf("Sync for issue `%s` starting\n", issueKey)
 
 	i := c.GetIssue(issueKey)
-	store.ReplaceIssueStateAndEvents(issueKey, issueStateFromIssue(i), issueEventsFromIssue(i))
+	store.ReplaceIssueStateAndEvents(issueKey, m.IssueStateFromIssue(i), m.IssueEventsFromIssue(i))
 
 	log.Printf("Sync done in %f minutes\n", time.Since(beforeSync).Minutes())
 }

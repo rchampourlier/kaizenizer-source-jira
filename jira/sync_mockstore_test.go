@@ -1,4 +1,4 @@
-package store
+package jira_test
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/rchampourlier/agilizer-source-jira/store"
 )
 
 // MockStore implements the `Store` interface for tests
@@ -37,7 +39,7 @@ func NewMockStore(t *testing.T) *MockStore {
 // `ReplaceIssueStateAndEvents` is called is not important, so it
 // will proceed differently for these expectations to ignore
 // order.
-func (m *MockStore) ReplaceIssueStateAndEvents(ik string, is IssueState, ies []IssueEvent) (err error) {
+func (m *MockStore) ReplaceIssueStateAndEvents(ik string, is store.IssueState, ies []store.IssueEvent) (err error) {
 	ee := m.popExpectedReplaceIssueStateAndEventsForIssueKey(ik)
 	if ee == nil {
 		log.Fatalf("mock received `ReplaceIssueStateAndEvents` but no `ReplaceIssueStateAndEvents` for the issue key `%s` was found", ik)
@@ -49,26 +51,27 @@ func (m *MockStore) ReplaceIssueStateAndEvents(ik string, is IssueState, ies []I
 	}
 
 	// Check issue state
-	if is.CreatedAt != ee.issueState.CreatedAt {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.CreatedAt=`%v` but was expecting `%v`\n", is.CreatedAt, ee.issueState.CreatedAt)
+	eis := *ee.issueState
+	if is.CreatedAt != eis.CreatedAt {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.CreatedAt=`%v` but was expecting `%v`\n", is.CreatedAt, eis.CreatedAt)
 	}
-	if is.UpdatedAt != ee.issueState.UpdatedAt {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.UpdatedAt=`%v` but was expecting `%v`\n", is.UpdatedAt, ee.issueState.UpdatedAt)
+	if is.UpdatedAt != eis.UpdatedAt {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.UpdatedAt=`%v` but was expecting `%v`\n", is.UpdatedAt, eis.UpdatedAt)
 	}
-	if is.Key != ee.issueState.Key {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Key=`%v` but was expecting `%v`\n", is.Key, ee.issueState.Key)
+	if is.Key != eis.Key {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Key=`%v` but was expecting `%v`\n", is.Key, eis.Key)
 	}
-	if *is.Project != *ee.issueState.Project {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Project=`%v` but was expecting `%v`\n", *is.Project, *ee.issueState.Project)
+	if eis.Project != nil && *is.Project != *eis.Project {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Project=`%v` but was expecting `%v`\n", *is.Project, *eis.Project)
 	}
-	if *is.ResolvedAt != *ee.issueState.ResolvedAt {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.ResolvedAt=`%v` but was expecting `%v`\n", *is.ResolvedAt, *ee.issueState.ResolvedAt)
+	if eis.ResolvedAt != nil && *is.ResolvedAt != *eis.ResolvedAt {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.ResolvedAt=`%v` but was expecting `%v`\n", *is.ResolvedAt, *eis.ResolvedAt)
 	}
-	if *is.Summary != *ee.issueState.Summary {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Summary=`%v` but was expecting `%v`\n", *is.Summary, *ee.issueState.Summary)
+	if eis.Summary != nil && *is.Summary != *eis.Summary {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Summary=`%v` but was expecting `%v`\n", *is.Summary, *eis.Summary)
 	}
-	if *is.Description != *ee.issueState.Description {
-		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Description=`%v` but was expecting `%v`\n", *is.Summary, *ee.issueState.Description)
+	if eis.Description != nil && *is.Description != *eis.Description {
+		m.Errorf("mock received `ReplaceIssueStateAndEvents` with state.Description=`%v` but was expecting `%v`\n", *is.Summary, *eis.Description)
 	}
 
 	// Check count of events
@@ -192,8 +195,8 @@ func (m *MockStore) ExpectReplaceIssueStateAndEvents() *ExpectedReplaceIssueStat
 // `ReplaceIssueStateAndEvents` method.
 type ExpectedReplaceIssueStateAndEvents struct {
 	issueKey    string
-	issueState  *IssueState
-	issueEvents []*IssueEvent
+	issueState  *store.IssueState
+	issueEvents []*store.IssueEvent
 	err         error
 }
 
@@ -213,7 +216,7 @@ func (e *ExpectedReplaceIssueStateAndEvents) WithIssueKey(ik string) *ExpectedRe
 // WithIssueState specifies the `*IssueState` argument
 // the `ReplaceIssueStateAndEvents` method is expected
 // to receive for this expectation
-func (e *ExpectedReplaceIssueStateAndEvents) WithIssueState(is *IssueState) *ExpectedReplaceIssueStateAndEvents {
+func (e *ExpectedReplaceIssueStateAndEvents) WithIssueState(is *store.IssueState) *ExpectedReplaceIssueStateAndEvents {
 	e.issueState = is
 	return e
 }
@@ -221,7 +224,7 @@ func (e *ExpectedReplaceIssueStateAndEvents) WithIssueState(is *IssueState) *Exp
 // WithIssueEvents specifies the `[]*IssueEvent` argument
 // the `ReplaceIssueStateAndEvents` method is expected
 // to receive for this expectation
-func (e *ExpectedReplaceIssueStateAndEvents) WithIssueEvents(ies []*IssueEvent) *ExpectedReplaceIssueStateAndEvents {
+func (e *ExpectedReplaceIssueStateAndEvents) WithIssueEvents(ies []*store.IssueEvent) *ExpectedReplaceIssueStateAndEvents {
 	e.issueEvents = ies
 	return e
 }
