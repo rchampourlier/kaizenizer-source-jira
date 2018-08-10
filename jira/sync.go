@@ -24,7 +24,7 @@ import (
 //   recreated.
 func PerformIncrementalSync(c Client, store store.Store, poolSize int, m Mapper) {
 	beforeSync := time.Now()
-	log.Printf("Sync starting\n")
+	log.Printf("Incremental sync starting\n")
 
 	// Using a chan of issue keys and a wait group for synchronization
 	issueKeys := make(chan string, 100)
@@ -104,9 +104,11 @@ func PerformSync(c Client, store store.Store, poolSize int, m Mapper) {
 			wg.Add(1)
 			go p.Process(issueKey)
 		}
+		wg.Done() // Done when all `issueKeys` have been sent for processing
 	}()
 
 	c.SearchIssues("ORDER BY updated ASC", issueKeys)
+	wg.Add(1) // Adding a job to wait for the processing of `issueKeys`
 
 	// Wait until all fetches are done
 	wg.Wait()
@@ -118,7 +120,7 @@ func PerformSync(c Client, store store.Store, poolSize int, m Mapper) {
 // issue specified by its key.
 func PerformSyncForIssueKey(c Client, store store.Store, issueKey string, m Mapper) {
 	beforeSync := time.Now()
-	log.Printf("Sync starting\n")
+	log.Printf("Sync for issue `%s` starting\n", issueKey)
 
 	i := c.GetIssue(issueKey)
 	store.ReplaceIssueStateAndEvents(issueKey, m.IssueStateFromIssue(i), m.IssueEventsFromIssue(i))

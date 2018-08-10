@@ -6,7 +6,7 @@ import (
 	"time"
 
 	extJira "github.com/andygrunwald/go-jira"
-	"github.com/rchampourlier/go-lib/matchers"
+	"github.com/rchampourlier/golib/matchers"
 
 	"github.com/rchampourlier/agilizer-source-jira/jira/mapping"
 	"github.com/rchampourlier/agilizer-source-jira/store"
