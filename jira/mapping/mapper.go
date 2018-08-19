@@ -6,7 +6,7 @@ import (
 
 	extJira "github.com/andygrunwald/go-jira"
 
-	"github.com/rchampourlier/agilizer-source-jira/store"
+	"github.com/rchampourlier/kaizenizer-source-jira/store"
 )
 
 // Mapper is the implementation of the `jira.Mapper` interface.

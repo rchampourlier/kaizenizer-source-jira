@@ -8,8 +8,8 @@ import (
 	extJira "github.com/andygrunwald/go-jira"
 	"github.com/rchampourlier/golib/matchers"
 
-	"github.com/rchampourlier/agilizer-source-jira/jira/mapping"
-	"github.com/rchampourlier/agilizer-source-jira/store"
+	"github.com/rchampourlier/kaizenizer-source-jira/jira/mapping"
+	"github.com/rchampourlier/kaizenizer-source-jira/store"
 )
 
 // This tests the `jira` package.

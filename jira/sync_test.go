@@ -7,9 +7,9 @@ import (
 
 	extJira "github.com/andygrunwald/go-jira"
 
-	"github.com/rchampourlier/agilizer-source-jira/jira"
-	"github.com/rchampourlier/agilizer-source-jira/jira/client"
-	"github.com/rchampourlier/agilizer-source-jira/store"
+	"github.com/rchampourlier/kaizenizer-source-jira/jira"
+	"github.com/rchampourlier/kaizenizer-source-jira/jira/client"
+	"github.com/rchampourlier/kaizenizer-source-jira/store"
 )
 
 // TODO: expectations should be checked (ensure they have been

@@ -6,10 +6,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/rchampourlier/agilizer-source-jira/jira"
-	"github.com/rchampourlier/agilizer-source-jira/jira/client"
-	"github.com/rchampourlier/agilizer-source-jira/jira/mapping"
-	"github.com/rchampourlier/agilizer-source-jira/store"
+	"github.com/rchampourlier/kaizenizer-source-jira/jira"
+	"github.com/rchampourlier/kaizenizer-source-jira/jira/client"
+	"github.com/rchampourlier/kaizenizer-source-jira/jira/mapping"
+	"github.com/rchampourlier/kaizenizer-source-jira/store"
 )
 
 const poolSize = 10

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rchampourlier/agilizer-source-jira/store"
+	"github.com/rchampourlier/kaizenizer-source-jira/store"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 )
 

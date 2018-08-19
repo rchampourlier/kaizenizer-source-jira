@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rchampourlier/agilizer-source-jira/store"
+	"github.com/rchampourlier/kaizenizer-source-jira/store"
 )
 
 // MockStore implements the `Store` interface for tests

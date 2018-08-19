@@ -8,7 +8,7 @@ import (
 
 	"github.com/Jeffail/tunny"
 
-	"github.com/rchampourlier/agilizer-source-jira/store"
+	"github.com/rchampourlier/kaizenizer-source-jira/store"
 )
 
 // PerformIncrementalSync fetches only newly updated issues and performs
