@@ -2,12 +2,28 @@ package store_test
 
 import (
 	"database/sql/driver"
+	"sort"
 	"testing"
 	"time"
 
 	"github.com/rchampourlier/kaizenizer-source-jira/store"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 )
+
+func TestStore_IssueEventsByTime_sort(t *testing.T) {
+	refTime := time.Now()
+	refTimePlus1Hour := refTime.Add(time.Hour)
+
+	evt1 := store.IssueEvent{EventTime: refTime}
+	evt2 := store.IssueEvent{EventTime: refTimePlus1Hour}
+	evts := []store.IssueEvent{evt2, evt1}
+
+	sort.Sort(store.IssueEventsByTime(evts))
+
+	if evts[0].EventTime != refTime {
+		t.Errorf("expected event at index 0 to have time %s, got %s", refTime, evts[0].EventTime)
+	}
+}
 
 func TestPGStore_ReplaceIssueStateAndEvents(t *testing.T) {
 	db, mock, err := sqlmock.New()
