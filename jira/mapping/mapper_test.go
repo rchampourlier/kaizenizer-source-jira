@@ -97,8 +97,8 @@ func TestIssueEventsFromIssue(t *testing.T) {
 			nil,
 			"Open",
 			[]changelogMockDef{
-				changelogMockDef{"status", "Open", "In Dev", refTime.Add(1 * time.Hour)},
 				changelogMockDef{"assignee", "InitialAssignee", "ChangedAssignee", refTime.Add(2 * time.Hour)},
+				changelogMockDef{"status", "Open", "In Dev", refTime.Add(1 * time.Hour)},
 			},
 		}
 		i := mockIssue(def)
@@ -161,8 +161,8 @@ func TestIssueEventsFromIssue(t *testing.T) {
 			nil,
 			"Open",
 			[]changelogMockDef{
-				changelogMockDef{"status", "Open", "In Dev", refTime.Add(1 * time.Hour)},
 				changelogMockDef{"status", "In Dev", "In Review", refTime.Add(2 * time.Hour)},
+				changelogMockDef{"status", "Open", "In Dev", refTime.Add(1 * time.Hour)},
 			},
 		}
 		i := mockIssue(def)

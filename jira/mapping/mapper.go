@@ -2,6 +2,7 @@ package mapping
 
 import (
 	"log"
+	"sort"
 	"time"
 
 	extJira "github.com/andygrunwald/go-jira"
@@ -60,7 +61,13 @@ func (m *Mapper) IssueEventsFromIssue(i *extJira.Issue) []store.IssueEvent {
 	hasChangelogOnStatus := false
 	hasChangelogOnAssignee := false
 	if i.Changelog != nil {
-		for _, h := range i.Changelog.Histories {
+		for k := range i.Changelog.Histories {
+			// We implement the loop using the index (k) to loop in reverse
+			// order. Histories returned by Jira API are sorted by time
+			// *descending* but the implementation is simpler if we
+			// process them in *ascending* order.
+			h := i.Changelog.Histories[len(i.Changelog.Histories)-k-1]
+
 			for _, cli := range h.Items {
 				switch cli.Field {
 				case "status":
@@ -153,6 +160,7 @@ func (m *Mapper) IssueEventsFromIssue(i *extJira.Issue) []store.IssueEvent {
 		})
 	}
 
+	sort.Sort(store.IssueEventsByTime(issueEvents))
 	return issueEvents
 }
 

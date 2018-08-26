@@ -76,3 +76,11 @@ func (ie IssueEvent) String() string {
 	}
 	return fmt.Sprintf("<IssueEvent:%s `%s` -> `%s`: time=%s author=%s issueKey=%s>", ie.EventKind, from, to, ie.EventTime, ie.EventAuthor, ie.IssueKey)
 }
+
+// IssueEventsByTime implements sort.Interface for []IssueEvent based on
+// the EventTime field.
+type IssueEventsByTime []IssueEvent
+
+func (a IssueEventsByTime) Len() int           { return len(a) }
+func (a IssueEventsByTime) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a IssueEventsByTime) Less(i, j int) bool { return a[i].EventTime.Before(a[j].EventTime) }
