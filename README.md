@@ -1,4 +1,4 @@
-# Agilizer Source for Jira
+# Kaizenizer Source for Jira
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/rchampourlier/agilizer-source-jira)](https://goreportcard.com/report/github.com/rchampourlier/agilizer-source-jira)
 [![Build Status](https://travis-ci.com/rchampourlier/agilizer-source-jira.svg?branch=master)](https://travis-ci.com/rchampourlier/agilizer-source-jira)
@@ -7,6 +7,8 @@
 ## Objective
 
 The goal of this project is to enable teams using Jira to perform analyses on Jira projects through a SQL database, enabling the use of user-friendly tools like Metabase, more powerful ones like Superset or even advanced data analysis toolsets (Python, R...).
+
+You can this project in conjunction with the [Kaizenizer](https://github.com/rchampourlier/kaizenizer) project for advanced metrics and visualization like lead and cycle time, cumulative flow diagrams, etc.
 
 ## Use cases
 
@@ -40,7 +42,7 @@ The tool will perform a request to only retrieve the issues modified since the l
 #### 0. Clone the repo
 
 ```
-go get github.com/rchampourlier/agilizer-source-jira
+go get github.com/rchampourlier/kaizenizer-source-jira
 ```
 
 NB: you should follow Go conventions (e.g. `GOPATH`, dependencies management, etc.) or at least have your environment working and know it well enough.
@@ -122,6 +124,10 @@ If you want to add new kinds of events:
 ### SSL issues with Postgres
 
 Add `?sslmode=disable` at the end of your DB URL.
+
+### Postgres `no pg_hba.conf entry for host`
+
+In this case, be sure not to have `?sslmode=disable` at the end!
 
 ## Contribution
 
