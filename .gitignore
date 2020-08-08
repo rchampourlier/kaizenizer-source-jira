@@ -5,3 +5,4 @@
 /coverage.txt
 /k8s
 /scripts/create-secrets.sh
+/vendor

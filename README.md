@@ -37,6 +37,12 @@ The tool will perform a request to only retrieve the issues modified since the l
 - Jira username and password
 - `cp .env.example` updated as necessary
 
+You may run a PostgreSQL database locally using docker. This will start the `db` container:
+
+```
+docker-compose up
+```
+
 ### How to use
 
 #### 0. Clone the repo
@@ -50,8 +56,10 @@ NB: you should follow Go conventions (e.g. `GOPATH`, dependencies management, et
 #### 1. Create your `.env` file
 
 ```
-cp .env.example .env
+cp .env.example .env.local
 ```
+
+NB: using `.env.local` and not `.env` because the latter is recognized and used by `docker-compose` in a way we don't want (we need the `export` to export the environment variables, but it doesn't like it).
 
 Now, edit the file and set the following values:
 
@@ -61,17 +69,23 @@ Now, edit the file and set the following values:
 
 NB: if you face Postgres SSL-related issues, try adding `?sslmode=disable` at the end of your `DB_URL`.
 
+If you're using the provided Docker DB:
+
+```
+DB_URL=postgres://agilizer:password@localhost:5432/agilizer
+```
+
 #### 2. DB initialization and initial synchronization
 
 ```
-source .env
+source .env.local
 go run *.go reset
 ```
 
 #### 3. Incremental synchronization
 
 ```
-source .env
+source .env.local
 go run *.go sync
 ```
 

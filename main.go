@@ -115,7 +115,8 @@ Available actions:
 }
 
 func openDB() *sql.DB {
-	connStr := os.Getenv("DB_URL")
+	//connStr := os.Getenv("DB_URL")
+	connStr := "user=agilizer password=password dbname=agilizer sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	db.SetMaxOpenConns(MaxOpenConns)
 	if err != nil {
